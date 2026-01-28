@@ -95,8 +95,9 @@ Relationships, multiplicities, and rationale:
 
 Prerequisites:
 
-- Run `npm install` from the repository root to ensure Mermaid CLI dependencies exist.
-- `npx mmdc` must be available (the script uses it to render PNGs).
+- Mermaid CLI must be available as `mmdc` (recommended: install via npm or snap).
+- The regeneration script uses `npx mmdc` to render PNGs; ensure Node.js + npm are installed, or use a system Mermaid CLI installation.
+- If your environment blocks Chromium sandboxing, run the script with the necessary permissions allowed by your platform.
 
 Generate PNG exports:
 
