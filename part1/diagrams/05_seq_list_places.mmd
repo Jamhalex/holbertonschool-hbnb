@@ -9,7 +9,14 @@ Client->>API: GET /places
 API->>Facade: list_places()
 Facade->>PRepo: list_all()
 PRepo->>DB: SELECT * FROM places
-DB-->>PRepo: rows
-PRepo-->>Facade: places[]
-Facade-->>API: places[]
-API-->>Client: 200 OK (places[])
+DB-->>PRepo: rows or error
+
+alt db error
+  PRepo-->>Facade: error
+  Facade-->>API: 500 Server Error
+  API-->>Client: 500 Server Error
+else ok
+  PRepo-->>Facade: places[]
+  Facade-->>API: 200 OK (places[])
+  API-->>Client: 200 OK (places[])
+end

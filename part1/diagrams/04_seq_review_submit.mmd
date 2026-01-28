@@ -2,9 +2,9 @@ sequenceDiagram
 actor Client
 participant API as ReviewAPI (Presentation)
 participant Facade as HBnBFacade (Business)
-participant URepo as UserRepository
-participant PRepo as PlaceRepository
-participant RRepo as ReviewRepository
+participant URepo as UserRepository (Persistence)
+participant PRepo as PlaceRepository (Persistence)
+participant RRepo as ReviewRepository (Persistence)
 participant DB as Database
 
 Client->>API: POST /places/{place_id}/reviews (user_id,rating,comment)

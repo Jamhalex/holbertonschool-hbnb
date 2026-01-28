@@ -40,6 +40,40 @@ Relationship notes:
 ![Sequence: Review submitted](exports/04_seq_review_submit.png)
 ![Sequence: List places](exports/05_seq_list_places.png)
 
+## Task 2 Notes (Sequence Diagrams)
+
+### User Registration
+
+- Creates a new user account with profile and credential fields.
+- API validates required fields and email format, then delegates to the facade.
+- Facade checks for existing users via the repository and returns 409 on conflict.
+- Repository queries/inserts in the database and returns the new identifier.
+- Success returns 201 Created; key errors include 400 Bad Request and 409 Conflict.
+
+### Place Creation
+
+- Creates a new place listing tied to an owner.
+- API validates required fields and forwards the request to the facade.
+- Facade ensures the owner exists via the user repository; missing owner returns 404.
+- Place repository inserts the new place record in the database.
+- Success returns 201 Created; key errors include 400 Bad Request and 404 Not Found.
+
+### Review Submission
+
+- Submits a review for a specific place by a user.
+- API validates payload basics (rating/comment) and calls the facade.
+- Facade loads user and place via repositories; missing entities return 404.
+- Facade validates rating rules and returns 400 on invalid values.
+- Review repository inserts the review; success returns 201 Created.
+
+### List Places
+
+- Retrieves a list of places for discovery or browsing.
+- API forwards the request (optionally with filters/pagination) to the facade.
+- Facade asks the place repository to query the database for listings.
+- Success returns 200 OK with an array (possibly empty).
+- Repository or database errors surface as 500 Server Error.
+
 ## Regenerate PNGs
 
 From the repository root:
