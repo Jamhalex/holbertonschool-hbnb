@@ -1,26 +1,32 @@
-# HBnB Part 1 UML
+# HBnB Part 1 Technical Documentation
 
-This folder contains the UML diagrams for the HBnB project and the script to regenerate PNG exports.
+## Introduction
 
-## Business rules summary
+This document consolidates the UML artifacts for HBnB Part 1 into an implementation-ready reference. It describes the intended architecture, the business entities and their relationships, and the expected API interactions. Use it to align service boundaries, validate entity constraints, and implement endpoints that follow the same responsibility split shown in the diagrams.
 
-- Users can register, authenticate, and manage their profiles.
-- Users can create places and list or search existing places.
-- Reviews can be submitted for places by authenticated users.
-
-## Task 0 notes (layers and facade)
-
-- Presentation layer: Handles user input and exposes API endpoints.
-- Business layer: Holds core domain logic, validation, and coordination of use cases.
-- Persistence layer: Stores and retrieves data using repositories or data mappers.
-- Facade: Provides a single entry point from the presentation layer into the business layer, shielding controllers from internal complexity.
-
-## Diagrams (PNG)
+## High-Level Architecture
 
 ![Package diagram](exports/00_package.png)
+
+The package diagram captures the core layering strategy:
+
+- Presentation layer: Owns HTTP request handling, input validation at the boundary, and response formatting. It should be thin and delegate work immediately to the facade.
+- Business layer: Implements domain rules and orchestrates use cases. It transforms validated inputs into entity operations and coordinates persistence.
+- Persistence layer: Abstracts storage concerns behind repositories or data mappers, keeping the business layer storage-agnostic.
+
+Facade pattern rationale:
+
+- A single entry point reduces coupling between controllers and domain services.
+- Centralized orchestration keeps cross-entity workflows consistent.
+- It simplifies testing by providing one boundary to mock during API tests.
+
+## Business Logic Layer
+
 ![Class diagram](exports/01_class_diagram.png)
 
-## Task 1 Notes (Business Logic Class Diagram)
+### Task 1 Notes
+
+Entity roles and key attributes/methods:
 
 - BaseEntity: shared `id`, `created_at`, `updated_at` with `to_dict` and `touch` for serialization and timestamp updates.
 - User: identity and access fields (`first_name`, `last_name`, `email`, `password`, `is_admin`) with `register`, `update_profile`, `set_password`.
@@ -28,56 +34,78 @@ This folder contains the UML diagrams for the HBnB project and the script to reg
 - Review: feedback fields (`rating`, `comment`) with `create`, `update_comment`, `validate_rating`.
 - Amenity: catalog fields (`name`, `description`) with `create`, `update_description`.
 
-Relationship notes:
+Relationships, multiplicities, and rationale:
 
-- User owns Places.
-- Place has Reviews.
-- User writes Reviews.
-- Place has many-to-many Amenities.
+- User 1..* Place (one user owns many places): captures ownership for listings and permissions.
+- Place 1..* Review (a place accumulates reviews): supports aggregated feedback per listing.
+- User 1..* Review (a user can submit many reviews): ties reviews to authorship and prevents anonymous writes.
+- Place *..* Amenity (many-to-many): amenities are reusable catalog items attached to multiple places.
 
-![Sequence: User registers](exports/02_seq_user_register.png)
-![Sequence: Place created](exports/03_seq_place_create.png)
-![Sequence: Review submitted](exports/04_seq_review_submit.png)
-![Sequence: List places](exports/05_seq_list_places.png)
-
-## Task 2 Notes (Sequence Diagrams)
+## API Interaction Flow
 
 ### User Registration
 
-- Creates a new user account with profile and credential fields.
-- API validates required fields and email format, then delegates to the facade.
-- Facade checks for existing users via the repository and returns 409 on conflict.
-- Repository queries/inserts in the database and returns the new identifier.
-- Success returns 201 Created; key errors include 400 Bad Request and 409 Conflict.
+![Sequence: User registers](exports/02_seq_user_register.png)
+
+#### Task 2 Notes
+
+- Accepts user profile fields and credentials to create a new account.
+- Validates required fields and email format before the facade is invoked.
+- Facade checks for existing users and returns 409 on conflict.
+- Repository persists the new user and returns the identifier.
+- Success returns 201 Created; validation errors return 400 Bad Request.
 
 ### Place Creation
 
-- Creates a new place listing tied to an owner.
-- API validates required fields and forwards the request to the facade.
-- Facade ensures the owner exists via the user repository; missing owner returns 404.
-- Place repository inserts the new place record in the database.
-- Success returns 201 Created; key errors include 400 Bad Request and 404 Not Found.
+![Sequence: Place created](exports/03_seq_place_create.png)
+
+#### Task 2 Notes
+
+- Creates a new place linked to a specific owner.
+- API validates required fields and forwards the payload to the facade.
+- Facade verifies the owner exists via the user repository; missing owner returns 404.
+- Place repository stores the listing and returns its identifier.
+- Success returns 201 Created; invalid payload returns 400 Bad Request.
 
 ### Review Submission
 
-- Submits a review for a specific place by a user.
-- API validates payload basics (rating/comment) and calls the facade.
-- Facade loads user and place via repositories; missing entities return 404.
-- Facade validates rating rules and returns 400 on invalid values.
-- Review repository inserts the review; success returns 201 Created.
+![Sequence: Review submitted](exports/04_seq_review_submit.png)
+
+#### Task 2 Notes
+
+- Submits a review for a specific place by an authenticated user.
+- API validates rating and comment basics, then calls the facade.
+- Facade loads user and place; missing entities return 404.
+- Domain rules validate rating range and prevent invalid values (400).
+- Repository inserts the review and returns 201 Created on success.
 
 ### List Places
 
-- Retrieves a list of places for discovery or browsing.
-- API forwards the request (optionally with filters/pagination) to the facade.
-- Facade asks the place repository to query the database for listings.
+![Sequence: List places](exports/05_seq_list_places.png)
+
+#### Task 2 Notes
+
+- Retrieves a list of places for browsing or search results.
+- API forwards filters/pagination to the facade when provided.
+- Facade delegates to the place repository for data retrieval.
 - Success returns 200 OK with an array (possibly empty).
-- Repository or database errors surface as 500 Server Error.
+- Repository failures surface as 500 Server Error with no partial results.
 
-## Regenerate PNGs
+## Regeneration
 
-From the repository root:
+Prerequisites:
+
+- Run `npm install` from the repository root to ensure Mermaid CLI dependencies exist.
+- `npx mmdc` must be available (the script uses it to render PNGs).
+
+Generate PNG exports:
 
 ```
 ./part1/regenerate.sh
 ```
+
+Sources and outputs:
+
+- Mermaid sources live in `part1/diagrams/*.mmd`.
+- PNG exports are written to `part1/exports/*.png`.
+- The optional PDF build reads from `part1/exports` and writes to `part1/HBnB_Part1_Technical_Documentation.pdf`.
