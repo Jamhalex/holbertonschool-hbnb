@@ -1,0 +1,26 @@
+sequenceDiagram
+actor Client
+participant API as UserAPI (Presentation)
+participant Facade as HBnBFacade (Business)
+participant Repo as UserRepository (Persistence)
+participant DB as Database
+
+Client->>API: POST /users (first,last,email,password)
+API->>Facade: create_user(dto)
+Facade->>Repo: find_by_email(email)
+Repo->>DB: SELECT user WHERE email
+DB-->>Repo: result
+
+alt email exists
+  Repo-->>Facade: user found
+  Facade-->>API: 409 Conflict
+  API-->>Client: 409 Conflict
+else ok
+  Repo-->>Facade: none
+  Facade->>Repo: insert(new User)
+  Repo->>DB: INSERT user
+  DB-->>Repo: new id
+  Repo-->>Facade: user created
+  Facade-->>API: 201 Created
+  API-->>Client: 201 Created
+end

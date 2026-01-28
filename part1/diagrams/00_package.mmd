@@ -1,0 +1,40 @@
+classDiagram
+direction TB
+
+namespace PresentationLayer {
+  class UserAPI
+  class PlaceAPI
+  class ReviewAPI
+  class AmenityAPI
+}
+
+namespace BusinessLogicLayer {
+  class HBnBFacade
+  class User
+  class Place
+  class Review
+  class Amenity
+}
+
+namespace PersistenceLayer {
+  class UserRepository
+  class PlaceRepository
+  class ReviewRepository
+  class AmenityRepository
+  class Database
+}
+
+UserAPI ..> HBnBFacade : calls
+PlaceAPI ..> HBnBFacade : calls
+ReviewAPI ..> HBnBFacade : calls
+AmenityAPI ..> HBnBFacade : calls
+
+HBnBFacade ..> UserRepository
+HBnBFacade ..> PlaceRepository
+HBnBFacade ..> ReviewRepository
+HBnBFacade ..> AmenityRepository
+
+UserRepository ..> Database
+PlaceRepository ..> Database
+ReviewRepository ..> Database
+AmenityRepository ..> Database

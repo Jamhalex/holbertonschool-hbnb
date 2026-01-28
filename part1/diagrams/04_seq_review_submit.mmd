@@ -1,0 +1,36 @@
+sequenceDiagram
+actor Client
+participant API as ReviewAPI (Presentation)
+participant Facade as HBnBFacade (Business)
+participant URepo as UserRepository
+participant PRepo as PlaceRepository
+participant RRepo as ReviewRepository
+participant DB as Database
+
+Client->>API: POST /places/{place_id}/reviews (user_id,rating,comment)
+API->>Facade: create_review(place_id, dto)
+
+Facade->>URepo: get_by_id(user_id)
+URepo->>DB: SELECT user WHERE id
+DB-->>URepo: result
+
+Facade->>PRepo: get_by_id(place_id)
+PRepo->>DB: SELECT place WHERE id
+DB-->>PRepo: result
+
+alt user or place missing
+  Facade-->>API: 404 Not Found
+  API-->>Client: 404 Not Found
+else ok
+  alt rating invalid
+    Facade-->>API: 400 Bad Request
+    API-->>Client: 400 Bad Request
+  else ok
+    Facade->>RRepo: insert(new Review)
+    RRepo->>DB: INSERT review
+    DB-->>RRepo: new id
+    RRepo-->>Facade: review created
+    Facade-->>API: 201 Created
+    API-->>Client: 201 Created
+  end
+end

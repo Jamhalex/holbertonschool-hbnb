@@ -1,0 +1,28 @@
+sequenceDiagram
+actor Client
+participant API as PlaceAPI (Presentation)
+participant Facade as HBnBFacade (Business)
+participant URepo as UserRepository (Persistence)
+participant PRepo as PlaceRepository (Persistence)
+participant DB as Database
+
+Client->>API: POST /places (title,desc,price,lat,long,owner_id)
+API->>Facade: create_place(dto)
+
+Facade->>URepo: get_by_id(owner_id)
+URepo->>DB: SELECT user WHERE id
+DB-->>URepo: result
+
+alt owner not found
+  URepo-->>Facade: none
+  Facade-->>API: 404 Not Found
+  API-->>Client: 404 Not Found
+else ok
+  URepo-->>Facade: owner
+  Facade->>PRepo: insert(new Place(owner))
+  PRepo->>DB: INSERT place
+  DB-->>PRepo: new id
+  PRepo-->>Facade: place created
+  Facade-->>API: 201 Created
+  API-->>Client: 201 Created
+end

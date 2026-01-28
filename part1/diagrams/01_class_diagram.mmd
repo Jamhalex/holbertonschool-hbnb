@@ -1,0 +1,58 @@
+classDiagram
+direction LR
+
+class BaseEntity {
+  +UUID id
+  +datetime created_at
+  +datetime updated_at
+  +to_dict() dict
+  +touch() void
+}
+
+class User {
+  +str first_name
+  +str last_name
+  +str email
+  -str password
+  +bool is_admin
+  +register() User
+  +update_profile(first_name, last_name) void
+  +set_password(raw_password) void
+}
+
+class Place {
+  +str title
+  +str description
+  +float price
+  +float latitude
+  +float longitude
+  +create(owner: User) Place
+  +update_details(title, description, price, latitude, longitude) void
+  +add_amenity(amenity: Amenity) void
+  +remove_amenity(amenity: Amenity) void
+}
+
+class Review {
+  +int rating
+  +str comment
+  +create(author: User, place: Place) Review
+  +update_comment(comment) void
+  +validate_rating() bool
+}
+
+class Amenity {
+  +str name
+  +str description
+  +create(name, description) Amenity
+  +update_description(description) void
+}
+
+BaseEntity <|-- User
+BaseEntity <|-- Place
+BaseEntity <|-- Review
+BaseEntity <|-- Amenity
+
+User "1" --> "0..*" Place : owns
+Place "1" --> "0..*" Review : has
+User "1" --> "0..*" Review : writes
+Place "0..*" -- "0..*" Amenity : amenities
