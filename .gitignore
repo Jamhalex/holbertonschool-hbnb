@@ -2,3 +2,6 @@ node_modules/
 npm-debug.log*
 *.log
 .DS_Store
+part2/.venv/
+__pycache__/
+*.pyc
