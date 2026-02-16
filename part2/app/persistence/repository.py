@@ -27,6 +27,10 @@ class InMemoryRepository:
         # Example uniqueness index: {"User.email": {"a@b.com": user_id}}
         self._unique: Dict[str, Dict[str, str]] = {}
 
+    def reset(self) -> None:
+        self._storage.clear()
+        self._unique.clear()
+
     def _bucket(self, model_name: str) -> Dict[str, Any]:
         return self._storage.setdefault(model_name, {})
 

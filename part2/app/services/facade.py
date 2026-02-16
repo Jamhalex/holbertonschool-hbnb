@@ -70,6 +70,8 @@ class HBnBFacade:
     # ---------- Places ----------
     def create_place(self, data: Dict) -> Place:
         owner_id = data.get("owner_id", "")
+        if not isinstance(owner_id, str) or not owner_id.strip():
+            raise ValidationError("owner_id is required")
         if not self.repo.exists(User, owner_id):
             raise NotFoundError("owner not found")
 
@@ -78,6 +80,8 @@ class HBnBFacade:
             amenity_ids = []
         if not isinstance(amenity_ids, list):
             raise ValidationError("amenity_ids must be a list")
+        if any(not isinstance(a_id, str) for a_id in amenity_ids):
+            raise ValidationError("amenity_ids must be a list of strings")
         for a_id in amenity_ids:
             if not self.repo.exists(Amenity, a_id):
                 raise NotFoundError(f"amenity not found: {a_id}")
@@ -109,6 +113,8 @@ class HBnBFacade:
 
         if "owner_id" in data:
             owner_id = data["owner_id"]
+            if not isinstance(owner_id, str) or not owner_id.strip():
+                raise ValidationError("owner_id is required")
             if not self.repo.exists(User, owner_id):
                 raise NotFoundError("owner not found")
             updates["owner_id"] = owner_id
@@ -119,6 +125,8 @@ class HBnBFacade:
                 amenity_ids = []
             if not isinstance(amenity_ids, list):
                 raise ValidationError("amenity_ids must be a list")
+            if any(not isinstance(a_id, str) for a_id in amenity_ids):
+                raise ValidationError("amenity_ids must be a list of strings")
             for a_id in amenity_ids:
                 if not self.repo.exists(Amenity, a_id):
                     raise NotFoundError(f"amenity not found: {a_id}")

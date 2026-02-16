@@ -15,10 +15,10 @@ class User(BaseModel):
     def validate(self) -> None:
         if not isinstance(self.email, str) or not self.email.strip():
             raise ValueError("email is required")
-        if not isinstance(self.first_name, str):
-            raise TypeError("first_name must be a string")
-        if not isinstance(self.last_name, str):
-            raise TypeError("last_name must be a string")
+        if not isinstance(self.first_name, str) or not self.first_name.strip():
+            raise ValueError("first_name is required")
+        if not isinstance(self.last_name, str) or not self.last_name.strip():
+            raise ValueError("last_name is required")
         if not isinstance(self.password, str) or not self.password.strip():
             raise ValueError("password is required")
 
