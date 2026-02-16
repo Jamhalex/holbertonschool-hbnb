@@ -4,7 +4,7 @@ set -euo pipefail
 BASE_URL=${BASE_URL:-http://127.0.0.1:5000/api/v1}
 
 json_id() {
-  python -c "import json,sys; print(json.load(sys.stdin)['id'])"
+  python3 -c "import json,sys; print(json.load(sys.stdin)['id'])"
 }
 
 echo "== Create user =="

@@ -15,6 +15,12 @@ class User(BaseModel):
     def validate(self) -> None:
         if not isinstance(self.email, str) or not self.email.strip():
             raise ValueError("email is required")
+        email = self.email.strip()
+        if " " in email or "@" not in email:
+            raise ValueError("email is invalid")
+        local, _, domain = email.partition("@")
+        if not local or not domain or "." not in domain:
+            raise ValueError("email is invalid")
         if not isinstance(self.first_name, str) or not self.first_name.strip():
             raise ValueError("first_name is required")
         if not isinstance(self.last_name, str) or not self.last_name.strip():

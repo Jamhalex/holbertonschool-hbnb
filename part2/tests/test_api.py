@@ -112,6 +112,25 @@ class APITestCase(unittest.TestCase):
         resp = self.client.post("/api/v1/users/", json=payload)
         self.assertEqual(resp.status_code, 400)
 
+    def test_validation_user_invalid_email_and_empty_first_name(self):
+        payload = {
+            "email": "bad-email",
+            "first_name": "Test",
+            "last_name": "User",
+            "password": "secret",
+        }
+        resp = self.client.post("/api/v1/users/", json=payload)
+        self.assertEqual(resp.status_code, 400)
+
+        payload = {
+            "email": "valid@example.com",
+            "first_name": "   ",
+            "last_name": "User",
+            "password": "secret",
+        }
+        resp = self.client.post("/api/v1/users/", json=payload)
+        self.assertEqual(resp.status_code, 400)
+
     def test_validation_amenity_missing_name(self):
         resp = self.client.post("/api/v1/amenities/", json={})
         self.assertEqual(resp.status_code, 400)
@@ -140,6 +159,44 @@ class APITestCase(unittest.TestCase):
         resp = self.client.post("/api/v1/places/", json=payload)
         self.assertEqual(resp.status_code, 400)
 
+    def test_validation_place_price_and_coords(self):
+        owner_id = self.create_user()
+        payload = {
+            "title": "Bad price",
+            "description": "price <= 0",
+            "price": 0,
+            "latitude": 0,
+            "longitude": 0,
+            "owner_id": owner_id,
+            "amenity_ids": [],
+        }
+        resp = self.client.post("/api/v1/places/", json=payload)
+        self.assertEqual(resp.status_code, 400)
+
+        payload = {
+            "title": "Bad lat",
+            "description": "lat out of range",
+            "price": 10,
+            "latitude": 91,
+            "longitude": 0,
+            "owner_id": owner_id,
+            "amenity_ids": [],
+        }
+        resp = self.client.post("/api/v1/places/", json=payload)
+        self.assertEqual(resp.status_code, 400)
+
+        payload = {
+            "title": "Bad lon",
+            "description": "lon out of range",
+            "price": 10,
+            "latitude": 0,
+            "longitude": 181,
+            "owner_id": owner_id,
+            "amenity_ids": [],
+        }
+        resp = self.client.post("/api/v1/places/", json=payload)
+        self.assertEqual(resp.status_code, 400)
+
     def test_validation_place_amenity_ids_not_list(self):
         owner_id = self.create_user()
         payload = {
@@ -150,6 +207,20 @@ class APITestCase(unittest.TestCase):
             "longitude": 0,
             "owner_id": owner_id,
             "amenity_ids": "not-a-list",
+        }
+        resp = self.client.post("/api/v1/places/", json=payload)
+        self.assertEqual(resp.status_code, 400)
+
+    def test_validation_place_amenity_ids_not_string(self):
+        owner_id = self.create_user()
+        payload = {
+            "title": "Bad amenity ids",
+            "description": "amenity_ids not string",
+            "price": 50,
+            "latitude": 0,
+            "longitude": 0,
+            "owner_id": owner_id,
+            "amenity_ids": [123],
         }
         resp = self.client.post("/api/v1/places/", json=payload)
         self.assertEqual(resp.status_code, 400)

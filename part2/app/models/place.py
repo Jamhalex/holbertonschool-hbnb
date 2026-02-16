@@ -27,8 +27,8 @@ class Place(BaseModel):
         # price
         if not isinstance(self.price, (int, float)):
             raise TypeError("price must be a number")
-        if float(self.price) < 0:
-            raise ValueError("price must be >= 0")
+        if float(self.price) <= 0:
+            raise ValueError("price must be > 0")
 
         # lat/lon basic sanity (you can tighten if spec requires)
         if not isinstance(self.latitude, (int, float)):
