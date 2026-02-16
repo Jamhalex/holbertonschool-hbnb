@@ -21,13 +21,16 @@ class HBnBFacade:
         self.repo = repo
 
     # ---------- Users ----------
+  
     def create_user(self, data: Dict) -> User:
         user = User(
             email=data.get("email", ""),
             first_name=data.get("first_name", ""),
             last_name=data.get("last_name", ""),
+            password=data.get("password", ""),
         )
         return self.repo.add(user)
+
 
     def list_users(self) -> List[User]:
         return self.repo.all(User)
@@ -38,13 +41,10 @@ class HBnBFacade:
     def update_user(self, user_id: str, data: Dict) -> User:
         user = self.repo.get(User, user_id)
         updates = {}
-        for k in ("email", "first_name", "last_name"):
+        for k in ("email", "first_name", "last_name", "password"):
             if k in data:
                 updates[k] = data[k]
         return self.repo.update(user, updates)
-
-    def delete_user(self, user_id: str) -> None:
-        self.repo.delete(User, user_id)
 
     # ---------- Amenities ----------
     def create_amenity(self, data: Dict) -> Amenity:
@@ -177,7 +177,4 @@ class HBnBFacade:
         for k in ("text", "rating"):
             if k in data:
                 updates[k] = data[k]
-        return self.repo.update(review, updates)
-
-    def delete_review(self, review_id: str) -> None:
-        self.repo.delete(Review, review_id)
+        return self.repo.update(review, update)

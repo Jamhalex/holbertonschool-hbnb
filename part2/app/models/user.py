@@ -10,6 +10,7 @@ class User(BaseModel):
     email: str = ""
     first_name: str = ""
     last_name: str = ""
+    password: str = ""  # stored in-memory for now; DO NOT return in API
 
     def validate(self) -> None:
         if not isinstance(self.email, str) or not self.email.strip():
@@ -18,8 +19,11 @@ class User(BaseModel):
             raise TypeError("first_name must be a string")
         if not isinstance(self.last_name, str):
             raise TypeError("last_name must be a string")
+        if not isinstance(self.password, str) or not self.password.strip():
+            raise ValueError("password is required")
 
     def to_dict(self) -> dict:
+        # Intentionally exclude password
         data = super().to_dict()
         data.update(
             {

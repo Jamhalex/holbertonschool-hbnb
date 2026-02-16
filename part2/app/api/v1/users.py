@@ -48,10 +48,3 @@ class UserItem(Resource):
             return {"error": str(e)}, 400
         except ConflictError as e:
             return {"error": str(e)}, 409
-
-    def delete(self, user_id):
-        try:
-            facade().delete_user(user_id)
-            return "", 204
-        except NotFoundError as e:
-            return {"error": str(e)}, 404
