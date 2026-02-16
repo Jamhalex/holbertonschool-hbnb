@@ -13,7 +13,7 @@ def facade():
 @api.route("/")
 class PlaceList(Resource):
     def get(self):
-        # basic list
+        # Basic list (no extended composition needed here)
         return [p.to_dict() for p in facade().list_places()], 200
 
     def post(self):
@@ -34,7 +34,7 @@ class PlaceItem(Resource):
     def get(self, place_id):
         try:
             p = facade().get_place(place_id)
-            # extended details
+            # Extended details: owner + amenities
             return facade().place_to_extended_dict(p), 200
         except NotFoundError as e:
             return {"error": str(e)}, 404
@@ -48,14 +48,5 @@ class PlaceItem(Resource):
             return {"error": str(e)}, 404
         except ValidationError as e:
             return {"error": str(e)}, 400
-        except ConflictError as e:
-            return {"error": str(e)}, 409
-
-    def delete(self, place_id):
-        try:
-            facade().delete_place(place_id)
-            return "", 204
-        except NotFoundError as e:
-            return {"error": str(e)}, 404
         except ConflictError as e:
             return {"error": str(e)}, 409

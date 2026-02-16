@@ -126,13 +126,6 @@ class HBnBFacade:
 
         return self.repo.update(place, updates)
 
-    def delete_place(self, place_id: str) -> None:
-        # Optional integrity: prevent deleting a place that has reviews
-        for r in self.repo.all(Review):
-            if r.place_id == place_id:
-                raise ConflictError("cannot delete place with reviews")
-        self.repo.delete(Place, place_id)
-
     # Extended serialization (owner + amenities)
     def place_to_extended_dict(self, place: Place) -> Dict:
         data = place.to_dict()

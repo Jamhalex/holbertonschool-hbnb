@@ -1,25 +1,30 @@
-node_modules/
-npm-debug.log*
+# =========================
+# Python
+# =========================
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# =========================
+# Virtual Environments
+# =========================
+.venv/
+venv/
+part2/.venv/
+
+# =========================
+# Logs
+# =========================
 *.log
+npm-debug.log*
+
+# =========================
+# OS Files
+# =========================
 .DS_Store
-part2/.venv/
-__pycache__/
-*.pyc
-# Python
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
 
-# Virtual env
-.venv/
-part2/.venv/
-# Python
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-
-# Virtual env
-.venv/
-part2/.venv/
+# =========================
+# Node (if ever used)
+# =========================
+node_modules/
