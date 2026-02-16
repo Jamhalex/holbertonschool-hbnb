@@ -50,3 +50,13 @@ class PlaceItem(Resource):
             return {"error": str(e)}, 400
         except ConflictError as e:
             return {"error": str(e)}, 409
+
+
+@api.route("/<string:place_id>/reviews")
+class PlaceReviews(Resource):
+    def get(self, place_id):
+        try:
+            reviews = [r.to_dict() for r in facade().get_reviews_for_place(place_id)]
+            return reviews, 200
+        except NotFoundError as e:
+            return {"error": str(e)}, 404

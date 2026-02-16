@@ -131,6 +131,7 @@ class HBnBFacade:
         data = place.to_dict()
         owner = self.repo.get(User, place.owner_id)
         amenities = [self.repo.get(Amenity, a_id) for a_id in place.amenity_ids]
+        reviews = [self.repo.get(Review, r_id) for r_id in place.review_ids if self.repo.exists(Review, r_id)]
 
         data["owner"] = {
             "id": owner.id,
@@ -138,12 +139,22 @@ class HBnBFacade:
             "last_name": owner.last_name,
         }
         data["amenities"] = [{"id": a.id, "name": a.name} for a in amenities]
+        data["reviews"] = [r.to_dict() for r in reviews]
         return data
 
     # ---------- Reviews ----------
     def create_review(self, data: Dict) -> Review:
+        text = data.get("text", "")
+        if not isinstance(text, str) or not text.strip():
+            raise ValidationError("text is required")
+
         user_id = data.get("user_id", "")
+        if not isinstance(user_id, str) or not user_id.strip():
+            raise ValidationError("user_id is required")
+
         place_id = data.get("place_id", "")
+        if not isinstance(place_id, str) or not place_id.strip():
+            raise ValidationError("place_id is required")
 
         if not self.repo.exists(User, user_id):
             raise NotFoundError("user not found")
@@ -151,15 +162,26 @@ class HBnBFacade:
             raise NotFoundError("place not found")
 
         review = Review(
-            text=data.get("text", ""),
-            rating=data.get("rating", 0),
+            text=text.strip(),
+            rating=data.get("rating"),
             user_id=user_id,
             place_id=place_id,
         )
-        return self.repo.add(review)
+        review = self.repo.add(review)
+
+        place = self.repo.get(Place, place_id)
+        if review.id not in place.review_ids:
+            review_ids = list(place.review_ids)
+            review_ids.append(review.id)
+            self.repo.update(place, {"review_ids": review_ids})
+
+        return review
 
     def list_reviews(self) -> List[Review]:
         return self.repo.all(Review)
+
+    def get_reviews(self) -> List[Review]:
+        return self.list_reviews()
 
     def get_review(self, review_id: str) -> Review:
         return self.repo.get(Review, review_id)
@@ -167,7 +189,24 @@ class HBnBFacade:
     def update_review(self, review_id: str, data: Dict) -> Review:
         review = self.repo.get(Review, review_id)
         updates: Dict = {}
-        for k in ("text", "rating"):
-            if k in data:
-                updates[k] = data[k]
-        return self.repo.update(review, update)
+        if "text" in data:
+            text = data.get("text", "")
+            if not isinstance(text, str) or not text.strip():
+                raise ValidationError("text is required")
+            updates["text"] = text.strip()
+        if not updates:
+            return review
+        return self.repo.update(review, updates)
+
+    def delete_review(self, review_id: str) -> None:
+        review = self.repo.get(Review, review_id)
+        place_id = review.place_id
+        if place_id and self.repo.exists(Place, place_id):
+            place = self.repo.get(Place, place_id)
+            review_ids = [r_id for r_id in place.review_ids if r_id != review_id]
+            self.repo.update(place, {"review_ids": review_ids})
+        self.repo.delete(Review, review_id)
+
+    def get_reviews_for_place(self, place_id: str) -> List[Review]:
+        place = self.repo.get(Place, place_id)
+        return [self.repo.get(Review, r_id) for r_id in place.review_ids if self.repo.exists(Review, r_id)]

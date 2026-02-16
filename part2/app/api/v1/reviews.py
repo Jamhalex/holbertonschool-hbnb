@@ -1,9 +1,25 @@
 #!/usr/bin/python3
 from flask import current_app, request
-from flask_restx import Namespace, Resource
+from flask_restx import Namespace, Resource, fields
 from app.persistence.repository import ConflictError, NotFoundError, ValidationError
 
 api = Namespace("reviews", description="Review operations")
+
+review_create = api.model(
+    "ReviewCreate",
+    {
+        "text": fields.String(required=True),
+        "user_id": fields.String(required=True),
+        "place_id": fields.String(required=True),
+        "rating": fields.Integer(required=False),
+    },
+)
+review_update = api.model(
+    "ReviewUpdate",
+    {
+        "text": fields.String(required=True),
+    },
+)
 
 
 def facade():
@@ -15,6 +31,7 @@ class ReviewList(Resource):
     def get(self):
         return [r.to_dict() for r in facade().list_reviews()], 200
 
+    @api.expect(review_create, validate=True)
     def post(self):
         payload = request.get_json(silent=True) or {}
         try:
@@ -36,6 +53,7 @@ class ReviewItem(Resource):
         except NotFoundError as e:
             return {"error": str(e)}, 404
 
+    @api.expect(review_update, validate=True)
     def put(self, review_id):
         payload = request.get_json(silent=True) or {}
         try:
