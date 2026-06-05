@@ -1,0 +1,34 @@
+classDiagram
+
+namespace Presentation_Layer {
+    class API
+    class Services
+}
+
+namespace Business_Logic_Layer {
+    class HBnBFacade
+    class User
+    class Place
+    class Review
+    class Amenity
+}
+
+namespace Persistence_Layer {
+    class UserRepository
+    class PlaceRepository
+    class ReviewRepository
+    class AmenityRepository
+}
+
+API --> HBnBFacade : Requests
+Services --> HBnBFacade : Requests
+
+HBnBFacade --> User
+HBnBFacade --> Place
+HBnBFacade --> Review
+HBnBFacade --> Amenity
+
+User --> UserRepository
+Place --> PlaceRepository
+Review --> ReviewRepository
+Amenity --> AmenityRepository
