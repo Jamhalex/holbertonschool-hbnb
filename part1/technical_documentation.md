@@ -1,310 +1,430 @@
-# HBnB Evolution - Technical Documentation
+# HBnB Evolution – Technical Documentation
 
 ## Introduction
 
-This document provides the technical design and architecture of the HBnB Evolution application. It serves as a blueprint for the implementation phases by describing the system architecture, business logic entities, and API interaction flows.
+This document provides the technical design and architecture for the **HBnB Evolution** application.
 
-HBnB Evolution is a simplified Airbnb-like platform that allows users to register, manage places, submit reviews, and associate amenities with places. The application follows a layered architecture composed of Presentation, Business Logic, and Persistence layers.
+The purpose of this documentation is to serve as a blueprint for the implementation phases of the project by defining:
+
+* The overall system architecture
+* The business logic layer design
+* The interactions between application layers
+* The flow of information during API requests
+
+The application follows a layered architecture composed of:
+
+1. Presentation Layer
+2. Business Logic Layer
+3. Persistence Layer
+
+The documentation includes UML diagrams created with Mermaid.js and explanatory notes describing the design decisions and relationships between system components.
 
 ---
 
 # 1. High-Level Architecture
 
-## Purpose
+## Package Diagram
 
-The purpose of this diagram is to illustrate the overall architecture of the HBnB application and the communication between layers using the Facade Pattern.
+### Source Diagram
 
-## High-Level Package Diagram
+[View High-Level Package Diagram](./high-level-diagram.mmd)
 
-![High-Level Package Diagram](task0_package_diagram.png)
+### Rendered Diagram
 
-### Architecture Overview
+![High-Level Package Diagram](./high-level-diagram.mmd.svg)
 
-The system is divided into three layers:
+---
+
+## Overview
+
+The HBnB application follows a three-layer architecture:
 
 ### Presentation Layer
 
-Responsible for handling user interactions through API endpoints and services.
+Responsible for handling user interactions and exposing REST API endpoints.
 
 Components:
 
-- REST API
-- Services
-- Controllers
+* API Endpoints
+* Services
+* Controllers
+
+Responsibilities:
+
+* Receive requests
+* Validate input
+* Return responses
+
+---
 
 ### Business Logic Layer
 
-Contains the core domain models and business rules.
-
-Entities:
-
-- User
-- Place
-- Review
-- Amenity
-
-The Facade acts as a unified interface between the Presentation Layer and the Business Logic Layer.
-
-### Persistence Layer
-
-Responsible for storing and retrieving data.
+Contains the application's core domain models and business rules.
 
 Components:
 
-- Repository Layer
-- Database Access Objects
-- Database
+* User
+* Place
+* Review
+* Amenity
+* HBnBFacade
 
-### Facade Pattern
+Responsibilities:
 
-The Facade Pattern simplifies communication between layers by exposing a single interface to the Presentation Layer. This reduces coupling and centralizes business operations.
+* Process business operations
+* Validate domain rules
+* Coordinate interactions between entities
+
+---
+
+### Persistence Layer
+
+Responsible for storing and retrieving application data.
+
+Components:
+
+* Repository Layer
+* Database
+
+Responsibilities:
+
+* Data persistence
+* Data retrieval
+* Database communication
+
+---
+
+## Facade Pattern
+
+The system uses the **Facade Pattern** through the `HBnBFacade` component.
+
+Benefits:
+
+* Simplifies communication between layers
+* Reduces coupling
+* Centralizes business operations
+* Provides a single entry point for application services
+
+Communication Flow:
+
+```text
+Presentation Layer
+        ↓
+    HBnBFacade
+        ↓
+ Business Logic
+        ↓
+ Persistence Layer
+```
 
 ---
 
 # 2. Business Logic Layer
 
-## Purpose
+## Class Diagram
 
-This diagram represents the internal structure of the Business Logic Layer, including entities, attributes, methods, and relationships.
+### Source Diagram
 
-## Detailed Class Diagram
+[View Business Logic Diagram](./business-logic-layer.mmd)
 
-![Business Logic Diagram](task1_class_diagram.png)
+### Rendered Diagram
+
+![Business Logic Diagram](./business-logic-layer.mmd.svg)
 
 ---
 
 ## BaseModel
 
-### Role
+### Purpose
 
-Parent class for all entities.
+Provides common attributes shared by all entities.
 
 ### Attributes
 
-- id : UUID
-- created_at : datetime
-- updated_at : datetime
+* id : UUID
+* created_at : datetime
+* updated_at : datetime
 
 ### Methods
 
-- save()
-- update()
-- delete()
+* save()
+* update()
 
 ---
 
 ## User
 
-### Role
+### Purpose
 
-Represents platform users.
+Represents a platform user.
 
 ### Attributes
 
-- first_name
-- last_name
-- email
-- password
-- is_admin
+* first_name
+* last_name
+* email
+* password
+* is_admin
 
 ### Methods
 
-- register()
-- update_profile()
-- delete()
+* create()
+* update()
+* delete()
 
 ---
 
 ## Place
 
-### Role
+### Purpose
 
-Represents a property listed by a user.
+Represents a property listed on the platform.
 
 ### Attributes
 
-- title
-- description
-- price
-- latitude
-- longitude
+* title
+* description
+* price
+* latitude
+* longitude
 
 ### Methods
 
-- create()
-- update()
-- delete()
+* create()
+* update()
+* delete()
+
+### Relationships
+
+* Owned by one User
+* Contains many Reviews
+* Associated with many Amenities
 
 ---
 
 ## Review
 
-### Role
+### Purpose
 
-Represents a user review of a place.
+Represents user feedback for a place.
 
 ### Attributes
 
-- rating
-- comment
+* rating
+* comment
 
 ### Methods
 
-- create()
-- update()
-- delete()
+* create()
+* update()
+* delete()
+
+### Relationships
+
+* Written by one User
+* Associated with one Place
 
 ---
 
 ## Amenity
 
-### Role
+### Purpose
 
-Represents features available in a place.
+Represents a service or feature available in a place.
 
 ### Attributes
 
-- name
-- description
+* name
+* description
 
 ### Methods
 
-- create()
-- update()
-- delete()
+* create()
+* update()
+* delete()
+
+### Relationships
+
+* Can belong to multiple Places
 
 ---
 
-## Relationships
-
-### User → Place
-
-A User can own multiple Places.
-
-Multiplicity:
-
-```text
-User 1 ---- 0..* Place
-```
-
-### User → Review
-
-A User can write multiple Reviews.
-
-Multiplicity:
-
-```text
-User 1 ---- 0..* Review
-```
-
-### Place → Review
-
-A Place can receive multiple Reviews.
-
-Multiplicity:
-
-```text
-Place 1 ---- 0..* Review
-```
-
-### Place ↔ Amenity
-
-Many-to-Many relationship.
-
-Multiplicity:
-
-```text
-Place 0..* ---- 0..* Amenity
-```
+## Entity Relationships
 
 ### Inheritance
 
-All entities inherit from BaseModel.
+All entities inherit from BaseModel:
+
+```text
+BaseModel
+ ├── User
+ ├── Place
+ ├── Review
+ └── Amenity
+```
+
+### Associations
+
+#### User → Place
+
+One user can own multiple places.
+
+Multiplicity:
+
+```text
+User (1) ------ (0..*) Place
+```
+
+#### User → Review
+
+One user can write multiple reviews.
+
+Multiplicity:
+
+```text
+User (1) ------ (0..*) Review
+```
+
+#### Place → Review
+
+One place can receive multiple reviews.
+
+Multiplicity:
+
+```text
+Place (1) ------ (0..*) Review
+```
+
+#### Place ↔ Amenity
+
+Many-to-many relationship.
+
+Multiplicity:
+
+```text
+Place (*) ------ (*) Amenity
+```
 
 ---
 
 # 3. API Interaction Flow
 
-The following sequence diagrams illustrate how requests travel through the Presentation, Business Logic, and Persistence layers.
+The following sequence diagrams illustrate how information flows through the Presentation, Business Logic, and Persistence layers.
 
 ---
 
 ## 3.1 User Registration
 
-![User Registration](user_registration.png)
+### Source Diagram
+
+[View User Registration Sequence](./User-Registration-Sequence.mmd)
+
+### Rendered Diagram
+
+![User Registration Sequence](./User-Registration-Sequence.mmd.svg)
 
 ### Description
 
-This sequence demonstrates the registration of a new user.
+A new user creates an account.
 
 ### Flow
 
-1. User submits registration data.
-2. API validates request.
+1. User sends registration request.
+2. API validates input.
 3. Facade creates User object.
-4. Repository persists data.
-5. Database stores record.
-6. Success response is returned.
+4. Repository stores user.
+5. Database confirms insertion.
+6. Success response returned.
 
 ---
 
 ## 3.2 Place Creation
 
-![Place Creation](place_creation.png)
+### Source Diagram
+
+[View Place Creation Sequence](./Place-Creation-Sequence.mmd)
+
+### Rendered Diagram
+
+![Place Creation Sequence](./Place-Creation-Sequence.mmd.svg)
 
 ### Description
 
-This sequence demonstrates how a user creates a new property listing.
+A user creates a new property listing.
 
 ### Flow
 
-1. User submits place information.
-2. API forwards request.
-3. Facade validates ownership.
-4. Place object is created.
-5. Repository stores place.
-6. Success response is returned.
+1. User submits place data.
+2. API validates request.
+3. Facade creates Place object.
+4. Repository persists place.
+5. Database confirms storage.
+6. API returns success response.
 
 ---
 
 ## 3.3 Review Submission
 
-![Review Submission](review_submission.png)
+### Source Diagram
+
+[View Review Submission Sequence](./Review-Submission-Sequence.mmd)
+
+### Rendered Diagram
+
+![Review Submission Sequence](./Review-Submission-Sequence.mmd.svg)
 
 ### Description
 
-This sequence demonstrates how a review is added to a place.
+A user submits a review for a place.
 
 ### Flow
 
 1. User submits review.
-2. API validates request.
+2. API validates review data.
 3. Facade verifies user and place.
 4. Review object is created.
-5. Repository saves review.
-6. Success response is returned.
+5. Repository stores review.
+6. Database confirms insertion.
+7. Success response returned.
 
 ---
 
-## 3.4 Fetch Places
+## 3.4 Fetching Places List
 
-![Fetch Places](fetch_places.png)
+### Source Diagram
+
+[View Places List Sequence](./Fetching-Places-List-Sequence.mmd)
+
+### Rendered Diagram
+
+![Fetching Places List Sequence](./Fetching-Places-List-Sequence.mmd.svg)
 
 ### Description
 
-This sequence demonstrates retrieving a list of places.
+A user requests a list of places.
 
 ### Flow
 
-1. User requests places.
-2. API forwards query.
-3. Facade requests data.
-4. Repository retrieves records.
-5. Database returns places.
-6. API returns results.
+1. User sends request.
+2. API forwards request.
+3. Facade queries repository.
+4. Repository retrieves places.
+5. Database returns results.
+6. Facade formats response.
+7. API returns list of places.
 
 ---
 
 # Conclusion
 
-This document provides the architectural foundation of the HBnB Evolution project. The package diagram defines the layered architecture and Facade Pattern, the class diagram specifies the business entities and relationships, and the sequence diagrams describe the interaction flow of key API operations. Together, these diagrams serve as a guide for the implementation phases of the application.
+This documentation defines the architectural foundation of the HBnB Evolution application.
+
+The diagrams collectively provide:
+
+* A high-level architectural overview
+* A detailed representation of the business entities
+* A visualization of API request processing
+* A blueprint for future implementation phases
+
+The layered architecture and facade pattern promote maintainability, scalability, and separation of concerns while ensuring clear communication between components of the system.
+
