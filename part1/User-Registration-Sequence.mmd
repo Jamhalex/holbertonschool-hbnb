@@ -1,0 +1,24 @@
+sequenceDiagram
+
+actor User
+
+participant API
+participant Facade
+participant UserModel
+participant Database
+
+User->>API: POST /users/register
+API->>Facade: create_user(user_data)
+
+Facade->>UserModel: validate_user_data()
+
+UserModel-->>Facade: valid
+
+Facade->>Database: save_user()
+
+Database-->>Facade: user_created
+
+Facade-->>API: success response
+
+API-->>User: 201 Created
+
