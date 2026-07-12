@@ -28,7 +28,6 @@ class HBnBFacade:
         self.review_repo = InMemoryRepository()
         self.amenity_repo = InMemoryRepository()
 
-
     # =====================
     # User operations
     # =====================
@@ -41,16 +40,13 @@ class HBnBFacade:
 
         return user
 
-
     def get_user(self, user_id):
 
         return self.user_repo.get(user_id)
 
-
     def get_all_users(self):
 
         return self.user_repo.get_all()
-
 
     def get_user_by_email(self, email):
 
@@ -58,7 +54,6 @@ class HBnBFacade:
             "email",
             email
         )
-
 
     def update_user(self, user_id, user_data):
 
@@ -70,8 +65,6 @@ class HBnBFacade:
         user.update(user_data)
 
         return user
-
-
 
     # =====================
     # Place operations
@@ -86,7 +79,6 @@ class HBnBFacade:
         if not owner:
             return None
 
-
         place = Place(
             place_data["title"],
             place_data["description"],
@@ -100,19 +92,13 @@ class HBnBFacade:
 
         return place
 
-
-
     def get_place(self, place_id):
 
         return self.place_repo.get(place_id)
 
-
-
     def get_all_places(self):
 
         return self.place_repo.get_all()
-
-
 
     def update_place(self, place_id, place_data):
 
@@ -121,16 +107,12 @@ class HBnBFacade:
         if not place:
             return None
 
-
         if "owner_id" in place_data:
             del place_data["owner_id"]
-
 
         place.update(place_data)
 
         return place
-
-
 
     # =====================
     # Amenity operations
@@ -144,19 +126,13 @@ class HBnBFacade:
 
         return amenity
 
-
-
     def get_amenity(self, amenity_id):
 
         return self.amenity_repo.get(amenity_id)
 
-
-
     def get_all_amenities(self):
 
         return self.amenity_repo.get_all()
-
-
 
     def update_amenity(self, amenity_id, amenity_data):
 
@@ -167,14 +143,11 @@ class HBnBFacade:
         if not amenity:
             return None
 
-
         amenity.update(
             amenity_data
         )
 
         return amenity
-
-
 
     # =====================
     # Review operations
@@ -195,8 +168,6 @@ class HBnBFacade:
 
         return review
 
-
-
     def get_review(self, review_id):
         """
         Retrieve review by ID.
@@ -204,16 +175,12 @@ class HBnBFacade:
 
         return self.review_repo.get(review_id)
 
-
-
     def get_all_reviews(self):
         """
         Retrieve all reviews.
         """
 
         return self.review_repo.get_all()
-
-
 
     def update_review(self, review_id, review_data):
         """
@@ -225,12 +192,9 @@ class HBnBFacade:
         if not review:
             return None
 
-
         review.update(review_data)
 
         return review
-
-
 
     def delete_review(self, review_id):
         """
@@ -242,12 +206,9 @@ class HBnBFacade:
         if not review:
             return False
 
-
         self.review_repo.delete(review_id)
 
         return True
-
-
 
     def get_reviews_by_place(self, place_id):
         """

@@ -44,7 +44,6 @@ class ReviewList(Resource):
     Handles review collection operations.
     """
 
-
     @api.expect(review_model, validate=True)
     @api.response(201, "Review created successfully")
     @api.response(400, "Invalid input data")
@@ -55,37 +54,31 @@ class ReviewList(Resource):
 
         data = api.payload
 
-
         # Validate text
         if not data.get("text"):
             return {
                 "error": "Review text is required"
             }, 400
 
-
         # Find user
         user = facade.get_user(
             data["user_id"]
         )
-
 
         # Find place
         place = facade.get_place(
             data["place_id"]
         )
 
-
         if not user:
             return {
                 "error": "User not found"
             }, 400
 
-
         if not place:
             return {
                 "error": "Place not found"
             }, 400
-
 
         review = facade.create_review(
             {
@@ -95,10 +88,7 @@ class ReviewList(Resource):
             }
         )
 
-
         return review.to_dict(), 201
-
-
 
     @api.response(200, "Reviews retrieved successfully")
     def get(self):
@@ -114,7 +104,6 @@ class ReviewList(Resource):
         ], 200
 
 
-
 # =====================
 # Single review
 # =====================
@@ -124,8 +113,6 @@ class ReviewResource(Resource):
     """
     Handles single review operations.
     """
-
-
 
     @api.response(200, "Review retrieved successfully")
     @api.response(404, "Review not found")
@@ -138,17 +125,12 @@ class ReviewResource(Resource):
             review_id
         )
 
-
         if not review:
             return {
                 "error": "Review not found"
             }, 404
 
-
         return review.to_dict(), 200
-
-
-
 
     @api.expect(review_model, validate=True)
     @api.response(200, "Review updated successfully")
@@ -161,23 +143,17 @@ class ReviewResource(Resource):
 
         data = api.payload
 
-
         review = facade.update_review(
             review_id,
             data
         )
-
 
         if not review:
             return {
                 "error": "Review not found"
             }, 404
 
-
         return review.to_dict(), 200
-
-
-
 
     @api.response(200, "Review deleted successfully")
     @api.response(404, "Review not found")
@@ -190,12 +166,10 @@ class ReviewResource(Resource):
             review_id
         )
 
-
         if not deleted:
             return {
                 "error": "Review not found"
             }, 404
-
 
         return {
             "message": "Review deleted successfully"

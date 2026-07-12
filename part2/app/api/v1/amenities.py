@@ -56,7 +56,6 @@ class AmenityList(Resource):
             "name": amenity.name
         }, 201
 
-
     @api.response(200, "List of amenities retrieved successfully")
     def get(self):
         """
@@ -72,7 +71,6 @@ class AmenityList(Resource):
             }
             for amenity in amenities
         ], 200
-
 
 
 @api.route("/<amenity_id>")
@@ -101,8 +99,6 @@ class AmenityResource(Resource):
             "id": amenity.id,
             "name": amenity.name
         }, 200
-
-
 
     @api.expect(amenity_model, validate=True)
     @api.response(200, "Amenity updated successfully")

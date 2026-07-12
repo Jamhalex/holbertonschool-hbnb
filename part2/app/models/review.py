@@ -36,7 +36,6 @@ class Review(BaseModel):
         place.add_review(self)
         user.reviews.append(self)
 
-
     def to_dict(self):
         """
         Serialize review object.

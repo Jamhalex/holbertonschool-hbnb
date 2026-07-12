@@ -12,14 +12,12 @@ from app.api.v1.places import api as places_ns
 from app.api.v1.reviews import api as reviews_ns
 
 
-
 def create_app():
     """
     Create and configure Flask application.
     """
 
     app = Flask(__name__)
-
 
     api = Api(
         app,
@@ -29,7 +27,6 @@ def create_app():
         doc="/api/v1/"
     )
 
-
     # Register namespaces
 
     api.add_namespace(
@@ -37,23 +34,19 @@ def create_app():
         path="/api/v1/users"
     )
 
-
     api.add_namespace(
         amenities_ns,
         path="/api/v1/amenities"
     )
-
 
     api.add_namespace(
         places_ns,
         path="/api/v1/places"
     )
 
-
     api.add_namespace(
         reviews_ns,
         path="/api/v1/reviews"
     )
-
 
     return app
