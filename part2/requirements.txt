@@ -1,5 +1,4 @@
 Flask
 flask-restx
 pytest
-pycodestyle
-autopep8
+Flask-Bcrypt

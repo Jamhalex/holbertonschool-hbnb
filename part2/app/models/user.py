@@ -4,6 +4,7 @@ User model for HBnB application.
 """
 
 from app.models.base_model import BaseModel
+from app.extensions import bcrypt
 
 
 class User(BaseModel):
@@ -20,12 +21,6 @@ class User(BaseModel):
     ):
         """
         Initialize a User instance.
-
-        Args:
-            first_name (str): User first name.
-            last_name (str): User last name.
-            email (str): User email address.
-            password (str): User password.
         """
 
         super().__init__()
@@ -33,15 +28,38 @@ class User(BaseModel):
         self.first_name = first_name
         self.last_name = last_name
         self.email = email
-        self.password = password
 
-        # Relationships
+        self.password = None
+        if password:
+            self.hash_password(password)
+
         self.places = []
         self.reviews = []
+
+    def hash_password(self, password):
+        """
+        Hash and store the user's password.
+        """
+
+        self.password = bcrypt.generate_password_hash(
+            password
+        ).decode("utf-8")
+
+    def verify_password(self, password):
+        """
+        Verify a password against the stored hash.
+        """
+
+        return bcrypt.check_password_hash(
+            self.password,
+            password
+        )
 
     def to_dict(self):
         """
         Return dictionary representation of the user.
+
+        Password is intentionally excluded.
         """
 
         data = super().to_dict()
@@ -52,5 +70,4 @@ class User(BaseModel):
             "email": self.email
         })
 
-        # Password intentionally excluded
         return data
