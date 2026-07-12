@@ -11,7 +11,13 @@ class User(BaseModel):
     Represents a user in the HBnB application.
     """
 
-    def __init__(self, first_name, last_name, email):
+    def __init__(
+        self,
+        first_name,
+        last_name,
+        email,
+        password=None
+    ):
         """
         Initialize a User instance.
 
@@ -19,6 +25,7 @@ class User(BaseModel):
             first_name (str): User first name.
             last_name (str): User last name.
             email (str): User email address.
+            password (str): User password.
         """
 
         super().__init__()
@@ -26,6 +33,7 @@ class User(BaseModel):
         self.first_name = first_name
         self.last_name = last_name
         self.email = email
+        self.password = password
 
         # Relationships
         self.places = []
@@ -44,4 +52,5 @@ class User(BaseModel):
             "email": self.email
         })
 
+        # Password intentionally excluded
         return data

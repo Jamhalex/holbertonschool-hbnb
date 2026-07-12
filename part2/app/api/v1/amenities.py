@@ -41,6 +41,12 @@ class AmenityList(Resource):
 
         amenity_data = api.payload
 
+        # Validate name
+        if not amenity_data.get("name"):
+            return {
+                "error": "Amenity name is required"
+            }, 400
+
         amenity = facade.create_amenity(
             amenity_data
         )
@@ -91,7 +97,6 @@ class AmenityResource(Resource):
                 "error": "Amenity not found"
             }, 404
 
-
         return {
             "id": amenity.id,
             "name": amenity.name
@@ -108,16 +113,23 @@ class AmenityResource(Resource):
         Update an amenity.
         """
 
+        amenity_data = api.payload
+
+        # Validate name
+        if not amenity_data.get("name"):
+            return {
+                "error": "Amenity name is required"
+            }, 400
+
         amenity = facade.update_amenity(
             amenity_id,
-            api.payload
+            amenity_data
         )
 
         if not amenity:
             return {
                 "error": "Amenity not found"
             }, 404
-
 
         return {
             "id": amenity.id,
