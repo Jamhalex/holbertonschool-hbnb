@@ -3,8 +3,12 @@
 HBnB Flask application initialization.
 """
 
+import os
+
 from flask import Flask
 from flask_restx import Api
+
+from config import config
 
 from app.api.v1.users import api as users_ns
 from app.api.v1.amenities import api as amenities_ns
@@ -18,6 +22,15 @@ def create_app():
     """
 
     app = Flask(__name__)
+
+    env = os.getenv(
+        "FLASK_ENV",
+        "development"
+    )
+
+    app.config.from_object(
+        config[env]
+    )
 
     api = Api(
         app,

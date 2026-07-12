@@ -2,207 +2,247 @@
 
 ## Description
 
-HBnB is a RESTful API built with Flask and Flask-RESTx.
-The project provides backend services for managing users, places,
-reviews, and amenities.
+HBnB is a RESTful API built with **Flask** and **Flask-RESTx**.
 
-The API implements:
+The project provides backend services for managing:
 
-- User management
-- Place management
-- Review management
-- Amenity management
+- Users
+- Places
+- Reviews
+- Amenities
+
+It includes:
+
+- RESTful API endpoints
 - Input validation
 - Error handling
-- Swagger API documentation
+- Swagger documentation
+- Automated unit testing
 
 ---
 
-# Technology Stack
+## Technology Stack
 
 - Python 3
 - Flask
 - Flask-RESTx
 - unittest
-- In-memory repository pattern
+- In-memory Repository Pattern
 
 ---
 
-# Project Structure
+## Project Structure
 
-
+```text
 part2/
 ├── app/
-│ ├── api/
-│ │ └── v1/
-│ │ ├── users.py
-│ │ ├── places.py
-│ │ ├── reviews.py
-│ │ └── amenities.py
-│ │
-│ ├── models/
-│ ├── services/
-│ └── init.py
-│
-├── tests/
+│   ├── api/
+│   │   └── v1/
+│   │       ├── amenities.py
+│   │       ├── places.py
+│   │       ├── reviews.py
+│   │       └── users.py
+│   ├── models/
+│   ├── services/
+│   └── __init__.py
 ├── docs/
+├── tests/
 ├── config.py
-├── run.py
 ├── requirements.txt
+├── run.py
 └── README.md
-
+```
 
 ---
 
-# Installation
+## Installation
 
 Clone the repository:
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/<username>/holbertonschool-hbnb.git
+```
 
 Navigate to the project:
 
-cd part2
+```bash
+cd holbertonschool-hbnb/part2
+```
 
-Create virtual environment:
+Create a virtual environment:
 
+```bash
 python3 -m venv venv
+```
 
-Activate environment:
+Activate it:
 
 Linux/macOS:
 
+```bash
 source venv/bin/activate
+```
 
 Install dependencies:
 
+```bash
 pip install -r requirements.txt
-Running the API
+```
+
+---
+
+## Running the API
 
 Start the server:
 
+```bash
 python3 run.py
+```
 
-The API will run at:
+The API runs at:
 
+```
 http://127.0.0.1:5000
-Swagger Documentation
+```
 
-Open:
+---
 
+## Swagger Documentation
+
+Interactive API documentation is available at:
+
+```
 http://127.0.0.1:5000/api/v1/
+```
 
-Swagger provides interactive documentation for all endpoints.
+---
 
-Available resources:
+## Available Resources
 
-Users
-Places
-Reviews
-Amenities
-API Endpoints
-Users
+- Users
+- Places
+- Reviews
+- Amenities
 
-Create user:
+---
 
-POST /api/v1/users/
+## API Endpoints
 
-Retrieve users:
+### Users
 
-GET /api/v1/users/
+| Method | Endpoint |
+|---------|----------|
+| POST | `/api/v1/users/` |
+| GET | `/api/v1/users/` |
+| GET | `/api/v1/users/<user_id>` |
+| PUT | `/api/v1/users/<user_id>` |
 
-Retrieve user:
+### Places
 
-GET /api/v1/users/<user_id>
+| Method | Endpoint |
+|---------|----------|
+| POST | `/api/v1/places/` |
+| GET | `/api/v1/places/` |
+| GET | `/api/v1/places/<place_id>` |
+| PUT | `/api/v1/places/<place_id>` |
 
-Update user:
+### Reviews
 
-PUT /api/v1/users/<user_id>
-Places
+| Method | Endpoint |
+|---------|----------|
+| POST | `/api/v1/reviews/` |
+| GET | `/api/v1/reviews/<review_id>` |
+| PUT | `/api/v1/reviews/<review_id>` |
 
-Create place:
+### Amenities
 
-POST /api/v1/places/
+| Method | Endpoint |
+|---------|----------|
+| POST | `/api/v1/amenities/` |
+| GET | `/api/v1/amenities/` |
 
-Retrieve places:
+---
 
-GET /api/v1/places/
+## Validation
 
-Retrieve place:
+### Users
 
-GET /api/v1/places/<place_id>
+- Required first name
+- Required last name
+- Valid email format
+- Duplicate email prevention
 
-Update place:
+### Places
 
-PUT /api/v1/places/<place_id>
-Reviews
+- Required title
+- Required description
+- Positive price
+- Latitude between -90 and 90
+- Longitude between -180 and 180
+- Existing owner validation
 
-Create review:
+### Reviews
 
-POST /api/v1/reviews/
+- Existing user validation
+- Existing place validation
+- Required review text
 
-Retrieve review:
+---
 
-GET /api/v1/reviews/<review_id>
+## Testing
 
-Update review:
+Run the automated tests:
 
-PUT /api/v1/reviews/<review_id>
-Amenities
-
-Create amenity:
-
-POST /api/v1/amenities/
-
-Retrieve amenities:
-
-GET /api/v1/amenities/
-Validation
-
-The API validates:
-
-Users
-Required first name
-Required last name
-Valid email
-Duplicate email prevention
-Places
-Required title
-Required description
-Positive price
-Latitude range (-90 to 90)
-Longitude range (-180 to 180)
-Existing owner validation
-Reviews
-Existing user validation
-Existing place validation
-Required review text
-Testing
-
-Run automated tests:
-
+```bash
 python3 -m unittest tests/test_api.py
+```
 
-Expected result:
+Expected output:
 
+```text
 ..........
 ----------------------------------------------------------------------
 Ran 10 tests
 
 OK
+```
 
-Run all tests:
+Run all discovered tests:
 
+```bash
 python3 -m unittest discover
-Code Quality
+```
 
-Check PEP8 compliance:
+---
 
+## Code Quality
+
+Run the PEP 8 checker:
+
+```bash
 pycodestyle app
+```
 
-The project should return no style errors.
+Expected result:
 
-Author
+```
+No output
+```
 
-HBnB API Project
+which indicates there are no style violations.
+
+---
+
+## Documentation
+
+A detailed testing report is available in:
+
+```text
+docs/testing_report.md
+```
+
+---
+
+## Author
+
+Johnson Martinez
