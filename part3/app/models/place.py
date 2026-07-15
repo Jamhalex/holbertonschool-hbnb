@@ -5,6 +5,7 @@ Place model for the HBnB application.
 
 from app.extensions import db
 from app.models.base_model import BaseModel
+from app.models.place_amenity import place_amenity
 
 
 class Place(BaseModel):
@@ -41,7 +42,25 @@ class Place(BaseModel):
 
     owner_id = db.Column(
         db.String(36),
+        db.ForeignKey("users.id"),
         nullable=False
+    )
+
+    owner = db.relationship(
+        "User",
+        back_populates="places"
+    )
+
+    reviews = db.relationship(
+        "Review",
+        back_populates="place",
+        cascade="all, delete-orphan"
+    )
+
+    amenities = db.relationship(
+        "Amenity",
+        secondary=place_amenity,
+        back_populates="places"
     )
 
     def __init__(
@@ -63,6 +82,14 @@ class Place(BaseModel):
         self.latitude = latitude
         self.longitude = longitude
         self.owner_id = owner_id
+
+    def add_amenity(self, amenity):
+        """
+        Associate an amenity with the place.
+        """
+
+        if amenity not in self.amenities:
+            self.amenities.append(amenity)
 
     def to_dict(self):
         """
