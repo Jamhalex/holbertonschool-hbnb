@@ -14,7 +14,6 @@ api = Namespace(
 )
 
 
-# Input / Swagger model
 review_model = api.model(
     "Review",
     {
@@ -34,14 +33,21 @@ review_model = api.model(
 )
 
 
-# =====================
-# Reviews collection
-# =====================
+update_review_model = api.model(
+    "UpdateReview",
+    {
+        "text": fields.String(
+            required=True,
+            description="Updated review text"
+        )
+    }
+)
+
 
 @api.route("/")
 class ReviewList(Resource):
     """
-    Handles review collection operations.
+    Handle review collection operations.
     """
 
     @api.expect(review_model, validate=True)
@@ -54,39 +60,35 @@ class ReviewList(Resource):
 
         data = api.payload
 
-        # Validate text
-        if not data.get("text"):
+        text = data.get("text")
+        user_id = data.get("user_id")
+        place_id = data.get("place_id")
+
+        if not isinstance(text, str) or not text.strip():
             return {
                 "error": "Review text is required"
             }, 400
 
-        # Find user
-        user = facade.get_user(
-            data["user_id"]
-        )
-
-        # Find place
-        place = facade.get_place(
-            data["place_id"]
-        )
-
-        if not user:
+        if not facade.get_user(user_id):
             return {
                 "error": "User not found"
             }, 400
 
-        if not place:
+        if not facade.get_place(place_id):
             return {
                 "error": "Place not found"
             }, 400
 
-        review = facade.create_review(
-            {
-                "text": data["text"],
-                "user": user,
-                "place": place
-            }
-        )
+        review = facade.create_review({
+            "text": text.strip(),
+            "user_id": user_id,
+            "place_id": place_id
+        })
+
+        if not review:
+            return {
+                "error": "Unable to create review"
+            }, 400
 
         return review.to_dict(), 201
 
@@ -104,26 +106,20 @@ class ReviewList(Resource):
         ], 200
 
 
-# =====================
-# Single review
-# =====================
-
 @api.route("/<review_id>")
 class ReviewResource(Resource):
     """
-    Handles single review operations.
+    Handle individual review operations.
     """
 
     @api.response(200, "Review retrieved successfully")
     @api.response(404, "Review not found")
     def get(self, review_id):
         """
-        Retrieve review by ID.
+        Retrieve a review by ID.
         """
 
-        review = facade.get_review(
-            review_id
-        )
+        review = facade.get_review(review_id)
 
         if not review:
             return {
@@ -132,20 +128,28 @@ class ReviewResource(Resource):
 
         return review.to_dict(), 200
 
-    @api.expect(review_model, validate=True)
+    @api.expect(update_review_model, validate=True)
     @api.response(200, "Review updated successfully")
-    @api.response(404, "Review not found")
     @api.response(400, "Invalid input data")
+    @api.response(404, "Review not found")
     def put(self, review_id):
         """
         Update a review.
         """
 
         data = api.payload
+        text = data.get("text")
+
+        if not isinstance(text, str) or not text.strip():
+            return {
+                "error": "Review text is required"
+            }, 400
 
         review = facade.update_review(
             review_id,
-            data
+            {
+                "text": text.strip()
+            }
         )
 
         if not review:
@@ -162,9 +166,7 @@ class ReviewResource(Resource):
         Delete a review.
         """
 
-        deleted = facade.delete_review(
-            review_id
-        )
+        deleted = facade.delete_review(review_id)
 
         if not deleted:
             return {

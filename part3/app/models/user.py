@@ -9,7 +9,7 @@ from app.models.base_model import BaseModel
 
 class User(BaseModel):
     """
-    SQLAlchemy User model.
+    SQLAlchemy model representing a user.
     """
 
     __tablename__ = "users"
@@ -39,19 +39,6 @@ class User(BaseModel):
         db.Boolean,
         default=False,
         nullable=False
-    )
-
-    # Relationships (the other models will be mapped later)
-    places = db.relationship(
-        "Place",
-        back_populates="owner",
-        lazy=True
-    )
-
-    reviews = db.relationship(
-        "Review",
-        back_populates="user",
-        lazy=True
     )
 
     def __init__(
@@ -85,7 +72,7 @@ class User(BaseModel):
 
     def verify_password(self, password):
         """
-        Verify a password against the stored hash.
+        Verify a plain-text password against the stored hash.
         """
 
         if not self.password:
@@ -98,9 +85,7 @@ class User(BaseModel):
 
     def to_dict(self):
         """
-        Return a dictionary representation of the user.
-
-        Password is intentionally excluded.
+        Return user data without exposing the password.
         """
 
         data = super().to_dict()

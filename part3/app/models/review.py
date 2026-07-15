@@ -1,52 +1,59 @@
 #!/usr/bin/python3
 """
-Review model for HBnB application.
+Review model for the HBnB application.
 """
 
+from app.extensions import db
 from app.models.base_model import BaseModel
 
 
 class Review(BaseModel):
     """
-    Review entity.
+    SQLAlchemy model representing a review.
     """
+
+    __tablename__ = "reviews"
+
+    text = db.Column(
+        db.Text,
+        nullable=False
+    )
+
+    user_id = db.Column(
+        db.String(36),
+        nullable=False
+    )
+
+    place_id = db.Column(
+        db.String(36),
+        nullable=False
+    )
 
     def __init__(
         self,
         text,
-        user,
-        place
+        user_id,
+        place_id
     ):
         """
-        Initialize review.
-
-        Args:
-            text (str): Review content.
-            user (User): User who created review.
-            place (Place): Place being reviewed.
+        Initialize a Review instance.
         """
 
-        super().__init__()
-
         self.text = text
-        self.user = user
-        self.place = place
-
-        # Maintain relationships
-        place.add_review(self)
-        user.reviews.append(self)
+        self.user_id = user_id
+        self.place_id = place_id
 
     def to_dict(self):
         """
-        Serialize review object.
+        Return a dictionary representation of the review.
         """
 
         data = super().to_dict()
 
         data.update({
             "text": self.text,
-            "user_id": self.user.id,
-            "place_id": self.place.id
+            "user_id": self.user_id,
+            "place_id": self.place_id
         })
 
         return data

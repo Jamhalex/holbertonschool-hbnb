@@ -12,7 +12,9 @@ from app.models.amenity import Amenity
 from app.models.place import Place
 from app.models.review import Review
 from app.models.user import User
-from app.persistence.repository import InMemoryRepository
+from app.persistence.amenity_repository import AmenityRepository
+from app.persistence.place_repository import PlaceRepository
+from app.persistence.review_repository import ReviewRepository
 from app.persistence.user_repository import UserRepository
 
 
@@ -23,16 +25,13 @@ class HBnBFacade:
 
     def __init__(self):
         """
-        Initialize repositories.
-
-        User persistence uses the user-specific SQLAlchemy repository.
-        Other entities remain in memory until they are mapped.
+        Initialize SQLAlchemy repositories.
         """
 
         self.user_repo = UserRepository()
-        self.place_repo = InMemoryRepository()
-        self.review_repo = InMemoryRepository()
-        self.amenity_repo = InMemoryRepository()
+        self.place_repo = PlaceRepository()
+        self.review_repo = ReviewRepository()
+        self.amenity_repo = AmenityRepository()
 
     # User operations
 
@@ -81,23 +80,21 @@ class HBnBFacade:
 
     def create_place(self, place_data):
         """
-        Create a place owned by an existing user.
+        Create and persist a place.
         """
 
-        owner = self.user_repo.get(
-            place_data["owner_id"]
-        )
+        owner_id = place_data.get("owner_id")
 
-        if not owner:
+        if not self.user_repo.get(owner_id):
             return None
 
         place = Place(
-            place_data["title"],
-            place_data["description"],
-            place_data["price"],
-            place_data["latitude"],
-            place_data["longitude"],
-            owner
+            title=place_data["title"],
+            description=place_data.get("description"),
+            price=place_data["price"],
+            latitude=place_data["latitude"],
+            longitude=place_data["longitude"],
+            owner_id=owner_id
         )
 
         self.place_repo.add(place)
@@ -120,10 +117,12 @@ class HBnBFacade:
 
     def update_place(self, place_id, place_data):
         """
-        Update a place.
+        Update and persist a place.
         """
 
         place_data = place_data.copy()
+
+        # Ownership cannot be changed through a normal update.
         place_data.pop("owner_id", None)
 
         return self.place_repo.update(
@@ -135,7 +134,7 @@ class HBnBFacade:
 
     def create_amenity(self, amenity_data):
         """
-        Create an amenity.
+        Create and persist an amenity.
         """
 
         amenity = Amenity(**amenity_data)
@@ -159,7 +158,7 @@ class HBnBFacade:
 
     def update_amenity(self, amenity_id, amenity_data):
         """
-        Update an amenity.
+        Update and persist an amenity.
         """
 
         return self.amenity_repo.update(
@@ -171,13 +170,22 @@ class HBnBFacade:
 
     def create_review(self, review_data):
         """
-        Create a review.
+        Create and persist a review.
         """
 
+        user_id = review_data.get("user_id")
+        place_id = review_data.get("place_id")
+
+        if not self.user_repo.get(user_id):
+            return None
+
+        if not self.place_repo.get(place_id):
+            return None
+
         review = Review(
-            review_data["text"],
-            review_data["user"],
-            review_data["place"]
+            text=review_data["text"],
+            user_id=user_id,
+            place_id=place_id
         )
 
         self.review_repo.add(review)
@@ -200,8 +208,14 @@ class HBnBFacade:
 
     def update_review(self, review_id, review_data):
         """
-        Update a review.
+        Update and persist a review.
         """
+
+        review_data = review_data.copy()
+
+        # The associated user and place cannot be changed.
+        review_data.pop("user_id", None)
+        review_data.pop("place_id", None)
 
         return self.review_repo.update(
             review_id,
@@ -220,8 +234,4 @@ class HBnBFacade:
         Retrieve all reviews associated with a place.
         """
 
-        return [
-            review
-            for review in self.review_repo.get_all()
-            if review.place.id == place_id
-        ]
+        return self.review_repo.get_reviews_by_place(place_id)
