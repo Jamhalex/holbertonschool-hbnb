@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 """
-Review model for HBnB application.
+Review model for the HBnB application.
 """
 
 from app.models.base_model import BaseModel
@@ -8,21 +8,16 @@ from app.models.base_model import BaseModel
 
 class Review(BaseModel):
     """
-    Review entity.
+    Represent a review written by a user for a place.
     """
 
-    def __init__(
-        self,
-        text,
-        user,
-        place
-    ):
+    def __init__(self, text, user, place):
         """
-        Initialize review.
+        Initialize a Review instance.
 
         Args:
             text (str): Review content.
-            user (User): User who created review.
+            user (User): User who created the review.
             place (Place): Place being reviewed.
         """
 
@@ -32,13 +27,12 @@ class Review(BaseModel):
         self.user = user
         self.place = place
 
-        # Maintain relationships
         place.add_review(self)
-        user.reviews.append(self)
+        user.add_review(self)
 
     def to_dict(self):
         """
-        Serialize review object.
+        Return a dictionary representation of the review.
         """
 
         data = super().to_dict()

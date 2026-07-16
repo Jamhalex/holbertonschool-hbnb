@@ -1,25 +1,24 @@
 sequenceDiagram
 
-actor User
+    actor Client
 
-participant API
-participant Facade
-participant PlaceModel
-participant Database
+    participant API as Place API
+    participant Facade as HBnBFacade
+    participant PlaceRepo as PlaceRepository
+    participant DB as SQLite Database
 
-User->>API: GET /places
+    Client->>API: GET /places
 
-API->>Facade: get_places(filters)
+    API->>Facade: get_all_places()
 
-Facade->>Database: query_places()
+    Facade->>PlaceRepo: get_all()
 
-Database-->>Facade: places_list
+    PlaceRepo->>DB: SELECT * FROM places
 
-Facade->>PlaceModel: format_results()
+    DB-->>PlaceRepo: Place records
 
-PlaceModel-->>Facade: formatted_places
+    PlaceRepo-->>Facade: List of Place objects
 
-Facade-->>API: response
+    Facade-->>API: List of Place objects
 
-API-->>User: 200 OK + places list
-
+    API-->>Client: 200 OK (JSON list)

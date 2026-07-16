@@ -1,16 +1,14 @@
 #!/usr/bin/python3
 """
-Repository interfaces and persistence implementations.
+Repository interface and in-memory implementation.
 """
 
 from abc import ABC, abstractmethod
 
-from app.extensions import db
-
 
 class Repository(ABC):
     """
-    Abstract repository interface.
+    Define the common repository interface.
     """
 
     @abstractmethod
@@ -34,37 +32,43 @@ class Repository(ABC):
     @abstractmethod
     def update(self, obj_id, data):
         """
-        Update an object.
+        Update an object using the supplied data.
         """
 
     @abstractmethod
     def delete(self, obj_id):
         """
-        Delete an object.
+        Delete an object by ID.
         """
 
     @abstractmethod
     def get_by_attribute(self, attr_name, attr_value):
         """
-        Retrieve an object by an attribute.
+        Retrieve an object by an attribute value.
         """
 
 
 class InMemoryRepository(Repository):
     """
-    Repository that stores objects in memory.
+    Store and manage objects in memory.
     """
 
     def __init__(self):
         """
-        Initialize the in-memory storage.
+        Initialize empty in-memory storage.
         """
 
         self._storage = {}
 
     def add(self, obj):
         """
-        Add an object to memory.
+        Add an object to storage.
+
+        Args:
+            obj: Object to store.
+
+        Returns:
+            The stored object.
         """
 
         self._storage[obj.id] = obj
@@ -74,20 +78,36 @@ class InMemoryRepository(Repository):
     def get(self, obj_id):
         """
         Retrieve an object by ID.
+
+        Args:
+            obj_id (str): Object identifier.
+
+        Returns:
+            The matching object, or None.
         """
 
         return self._storage.get(obj_id)
 
     def get_all(self):
         """
-        Retrieve all stored objects.
+        Return all stored objects.
+
+        Returns:
+            list: All objects in storage.
         """
 
         return list(self._storage.values())
 
     def update(self, obj_id, data):
         """
-        Update an object in memory.
+        Update a stored object.
+
+        Args:
+            obj_id (str): Object identifier.
+            data (dict): Attributes and values to update.
+
+        Returns:
+            The updated object, or None.
         """
 
         obj = self.get(obj_id)
@@ -101,7 +121,13 @@ class InMemoryRepository(Repository):
 
     def delete(self, obj_id):
         """
-        Delete an object from memory.
+        Delete a stored object.
+
+        Args:
+            obj_id (str): Object identifier.
+
+        Returns:
+            bool: True if deleted, otherwise False.
         """
 
         if obj_id not in self._storage:
@@ -113,7 +139,14 @@ class InMemoryRepository(Repository):
 
     def get_by_attribute(self, attr_name, attr_value):
         """
-        Retrieve the first object matching an attribute.
+        Retrieve the first object matching an attribute value.
+
+        Args:
+            attr_name (str): Attribute name.
+            attr_value: Expected attribute value.
+
+        Returns:
+            The matching object, or None.
         """
 
         return next(
@@ -124,105 +157,3 @@ class InMemoryRepository(Repository):
             ),
             None
         )
-
-
-class SQLAlchemyRepository(Repository):
-    """
-    Generic repository backed by SQLAlchemy.
-    """
-
-    def __init__(self, model):
-        """
-        Initialize the repository.
-
-        Args:
-            model: SQLAlchemy model class managed by the repository.
-        """
-
-        self.model = model
-
-    def add(self, obj):
-        """
-        Add and persist an object.
-        """
-
-        db.session.add(obj)
-        db.session.commit()
-
-        return obj
-
-    def get(self, obj_id):
-        """
-        Retrieve an object by primary key.
-        """
-
-        return db.session.get(
-            self.model,
-            obj_id
-        )
-
-    def get_all(self):
-        """
-        Retrieve all objects.
-        """
-
-        statement = db.select(self.model)
-
-        return list(
-            db.session.execute(
-                statement
-            ).scalars()
-        )
-
-    def update(self, obj_id, data):
-        """
-        Update and persist an existing object.
-        """
-
-        obj = self.get(obj_id)
-
-        if not obj:
-            return None
-
-        for key, value in data.items():
-            if hasattr(obj, key):
-                setattr(obj, key, value)
-
-        db.session.commit()
-
-        return obj
-
-    def delete(self, obj_id):
-        """
-        Delete an object from the database.
-        """
-
-        obj = self.get(obj_id)
-
-        if not obj:
-            return False
-
-        db.session.delete(obj)
-        db.session.commit()
-
-        return True
-
-    def get_by_attribute(self, attr_name, attr_value):
-        """
-        Retrieve the first object matching an attribute.
-        """
-
-        if not hasattr(self.model, attr_name):
-            return None
-
-        statement = db.select(
-            self.model
-        ).filter_by(
-            **{
-                attr_name: attr_value
-            }
-        )
-
-        return db.session.execute(
-            statement
-        ).scalar_one_or_none()

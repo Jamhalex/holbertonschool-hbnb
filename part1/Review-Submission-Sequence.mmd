@@ -1,25 +1,60 @@
 sequenceDiagram
 
-actor User
+    actor Client
 
-participant API
-participant Facade
-participant ReviewModel
-participant Database
+    participant API as Review API
+    participant JWT as JWT Authentication
+    participant Facade as HBnBFacade
+    participant UserRepo as UserRepository
+    participant PlaceRepo as PlaceRepository
+    participant ReviewRepo as ReviewRepository
+    participant DB as SQLite Database
 
-User->>API: POST /reviews
+    Client->>API: POST /reviews
+    API->>JWT: Validate access token
 
-API->>Facade: create_review(review_data)
+    alt Token missing or invalid
+        JWT-->>API: Authentication failed
+        API-->>Client: 401 Unauthorized
 
-Facade->>ReviewModel: validate_review()
+    else Token valid
+        JWT-->>API: Authenticated user ID
 
-ReviewModel-->>Facade: valid
+        API->>API: Validate review text and place ID
+        API->>Facade: create_review(review_data)
 
-Facade->>Database: save_review()
+        Facade->>UserRepo: get(user_id)
+        UserRepo->>DB: SELECT user
+        DB-->>UserRepo: User result
 
-Database-->>Facade: review_created
+        alt User not found
+            UserRepo-->>Facade: None
+            Facade-->>API: Creation failed
+            API-->>Client: 400 User not found
 
-Facade-->>API: success response
+        else User exists
+            UserRepo-->>Facade: User
 
-API-->>User: 201 Created
+            Facade->>PlaceRepo: get(place_id)
+            PlaceRepo->>DB: SELECT place
+            DB-->>PlaceRepo: Place result
 
+            alt Place not found
+                PlaceRepo-->>Facade: None
+                Facade-->>API: Creation failed
+                API-->>Client: 400 Place not found
+
+            else Place exists
+                PlaceRepo-->>Facade: Place
+
+                Facade->>ReviewRepo: add(review)
+                ReviewRepo->>DB: INSERT review
+                DB-->>ReviewRepo: Success
+
+                ReviewRepo-->>Facade: Review
+                Facade-->>API: Review
+
+                API-->>Client: 201 Created
+            end
+        end
+    end

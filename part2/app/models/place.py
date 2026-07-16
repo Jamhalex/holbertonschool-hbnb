@@ -1,11 +1,14 @@
 #!/usr/bin/python3
+"""
+Place model for the HBnB application.
+"""
 
 from app.models.base_model import BaseModel
 
 
 class Place(BaseModel):
     """
-    Place entity.
+    Represent a property listed in the HBnB application.
     """
 
     def __init__(
@@ -17,6 +20,18 @@ class Place(BaseModel):
         longitude,
         owner
     ):
+        """
+        Initialize a Place instance.
+
+        Args:
+            title (str): Place title.
+            description (str): Place description.
+            price (float): Price per night.
+            latitude (float): Geographic latitude.
+            longitude (float): Geographic longitude.
+            owner (User): User who owns the place.
+        """
+
         super().__init__()
 
         self.title = title
@@ -24,18 +39,39 @@ class Place(BaseModel):
         self.price = price
         self.latitude = latitude
         self.longitude = longitude
-
         self.owner = owner
         self.reviews = []
         self.amenities = []
 
+        owner.add_place(self)
+
     def add_review(self, review):
-        self.reviews.append(review)
+        """
+        Associate a review with the place.
+
+        Args:
+            review (Review): Review associated with the place.
+        """
+
+        if review not in self.reviews:
+            self.reviews.append(review)
 
     def add_amenity(self, amenity):
-        self.amenities.append(amenity)
+        """
+        Associate an amenity with the place.
+
+        Args:
+            amenity (Amenity): Amenity available at the place.
+        """
+
+        if amenity not in self.amenities:
+            self.amenities.append(amenity)
 
     def to_dict(self):
+        """
+        Return a dictionary representation of the place.
+        """
+
         data = super().to_dict()
 
         data.update({
@@ -44,7 +80,7 @@ class Place(BaseModel):
             "price": self.price,
             "latitude": self.latitude,
             "longitude": self.longitude,
-            "owner": self.owner.id
+            "owner_id": self.owner.id
         })
 
         return data

@@ -1,34 +1,44 @@
-classDiagram
+flowchart LR
 
-namespace Presentation_Layer {
-    class API
-    class Services
-}
+    Client["Client / Browser"]
 
-namespace Business_Logic_Layer {
-    class HBnBFacade
-    class User
-    class Place
-    class Review
-    class Amenity
-}
+    subgraph Presentation["Presentation Layer"]
+        API["Flask REST API"]
+    end
 
-namespace Persistence_Layer {
-    class UserRepository
-    class PlaceRepository
-    class ReviewRepository
-    class AmenityRepository
-}
+    subgraph Business["Business Logic Layer"]
+        Facade["HBnBFacade"]
+        User["User"]
+        Place["Place"]
+        Review["Review"]
+        Amenity["Amenity"]
+    end
 
-API --> HBnBFacade : Requests
-Services --> HBnBFacade : Requests
+    subgraph Persistence["Persistence Layer"]
+        UserRepository["UserRepository"]
+        PlaceRepository["PlaceRepository"]
+        ReviewRepository["ReviewRepository"]
+        AmenityRepository["AmenityRepository"]
+    end
 
-HBnBFacade --> User
-HBnBFacade --> Place
-HBnBFacade --> Review
-HBnBFacade --> Amenity
+    subgraph Database["Database Layer"]
+        SQLite[("SQLite Database")]
+    end
 
-User --> UserRepository
-Place --> PlaceRepository
-Review --> ReviewRepository
-Amenity --> AmenityRepository
+    Client -->|"HTTP / JSON"| API
+    API --> Facade
+
+    Facade --> User
+    Facade --> Place
+    Facade --> Review
+    Facade --> Amenity
+
+    Facade --> UserRepository
+    Facade --> PlaceRepository
+    Facade --> ReviewRepository
+    Facade --> AmenityRepository
+
+    UserRepository --> SQLite
+    PlaceRepository --> SQLite
+    ReviewRepository --> SQLite
+    AmenityRepository --> SQLite

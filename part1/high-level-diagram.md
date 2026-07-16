@@ -1,124 +1,117 @@
-# HBnB - High Level Package Diagram
+# High-Level Package Diagram
 
-## Objective
+## Overview
 
-This diagram illustrates the three-layer architecture of the HBnB application and the communication flow between layers using the Facade Pattern.
+The HBnB application follows a layered architecture that separates responsibilities into four main layers:
 
----
+- Presentation Layer
+- Business Logic Layer
+- Persistence Layer
+- Database
 
-## Architecture Overview
-
-The application is divided into three layers:
-
-### 1. Presentation Layer
-
-The Presentation Layer is responsible for interacting with users and external clients.
-
-Components:
-
-* API
-* Services
-
-Responsibilities:
-
-* Receive requests
-* Validate input
-* Return responses
-* Delegate operations to the facade
+This separation improves maintainability, scalability, and testability.
 
 ---
 
-### 2. Business Logic Layer
+## Architecture Diagram
 
-The Business Logic Layer contains the application's core rules and entities.
+```mermaid
+flowchart LR
 
-Components:
+Client["Client / Browser"]
 
-* HBnBFacade
-* User
-* Place
-* Review
-* Amenity
+subgraph Presentation["Presentation Layer"]
+API["Flask REST API"]
+end
 
-Responsibilities:
+subgraph Business["Business Logic Layer"]
+Facade["HBnBFacade"]
+User["User"]
+Place["Place"]
+Review["Review"]
+Amenity["Amenity"]
+end
 
-* Implement business rules
-* Coordinate system operations
-* Validate domain logic
-* Interact with repositories
+subgraph Persistence["Persistence Layer"]
+Repositories["Repositories"]
+end
 
-The HBnBFacade acts as the single entry point to this layer.
+subgraph Database
+SQLite[(SQLite / SQLAlchemy)]
+end
 
----
+Client --> API
+API --> Facade
 
-### 3. Persistence Layer
+Facade --> User
+Facade --> Place
+Facade --> Review
+Facade --> Amenity
 
-The Persistence Layer manages data storage and retrieval.
-
-Components:
-
-* UserRepository
-* PlaceRepository
-* ReviewRepository
-* AmenityRepository
-
-Responsibilities:
-
-* Database operations
-* Data persistence
-* Query execution
-* Data retrieval
+Facade --> Repositories
+Repositories --> SQLite
+```
 
 ---
 
-## Facade Pattern
+# Layer Responsibilities
 
-The HBnBFacade simplifies communication between the Presentation Layer and the Business Logic Layer.
+## Presentation Layer
 
-Benefits:
+The presentation layer exposes REST endpoints using Flask-RESTX.
 
-* Reduces coupling between layers
-* Hides internal complexity
-* Provides a unified interface
-* Improves maintainability
+Its responsibilities include:
 
-Communication Flow:
-
-Presentation Layer → HBnBFacade → Business Logic Layer → Persistence Layer
-
-The Presentation Layer never communicates directly with repositories or database components.
+- Receiving HTTP requests
+- Validating request data
+- Returning JSON responses
+- Authentication using JWT
 
 ---
 
-## SOLID Principles Applied
+## Business Logic Layer
 
-### Single Responsibility Principle (SRP)
+The business layer contains the application's core entities and business rules.
 
-Each layer has a specific responsibility:
-
-* Presentation handles requests.
-* Business Logic handles domain rules.
-* Persistence handles data storage.
-
-### Open/Closed Principle (OCP)
-
-New entities or services can be added without modifying existing components.
-
-### Liskov Substitution Principle (LSP)
-
-Repositories can be replaced by alternative implementations while maintaining behavior.
-
-### Interface Segregation Principle (ISP)
-
-The facade exposes only the operations needed by the Presentation Layer.
-
-### Dependency Inversion Principle (DIP)
-
-Business logic depends on abstractions (repositories) rather than concrete database implementations.
+The `HBnBFacade` coordinates communication between the presentation layer and the persistence layer.
 
 ---
 
-## Conclusion
+## Persistence Layer
 
-The HBnB architecture follows a layered design that promotes separation of concerns, maintainability, and scalability. The Facade Pattern provides a clean communication mechanism between layers while supporting SOLID object-oriented design principles.
+The persistence layer is responsible for storing and retrieving application data.
 
+Each entity has a dedicated repository:
+
+- UserRepository
+- PlaceRepository
+- ReviewRepository
+- AmenityRepository
+
+Repositories interact with SQLAlchemy instead of directly manipulating the database.
+
+---
+
+## Database Layer
+
+The database stores persistent application data.
+
+SQLAlchemy maps Python objects to relational tables including:
+
+- users
+- places
+- reviews
+- amenities
+- place_amenity
+
+---
+
+# Benefits
+
+This architecture provides:
+
+- Separation of concerns
+- Easier testing
+- Better maintainability
+- Improved scalability
+- Independent evolution of each layer

@@ -1,34 +1,24 @@
 #!/usr/bin/python3
 """
-User model for HBnB application.
+User model for the HBnB application.
 """
 
-from app.extensions import bcrypt
 from app.models.base_model import BaseModel
 
 
 class User(BaseModel):
     """
-    Represents a user in the HBnB application.
+    Represent a user in the HBnB application.
     """
 
-    def __init__(
-        self,
-        first_name,
-        last_name,
-        email,
-        password=None,
-        is_admin=False
-    ):
+    def __init__(self, first_name, last_name, email):
         """
         Initialize a User instance.
 
         Args:
-            first_name (str): User first name.
-            last_name (str): User last name.
-            email (str): User email address.
-            password (str, optional): Plain-text password to hash.
-            is_admin (bool, optional): Administrator status.
+            first_name (str): User's first name.
+            last_name (str): User's last name.
+            email (str): User's unique email address.
         """
 
         super().__init__()
@@ -36,42 +26,34 @@ class User(BaseModel):
         self.first_name = first_name
         self.last_name = last_name
         self.email = email
-        self.is_admin = is_admin
-
-        self.password = None
-        if password:
-            self.hash_password(password)
-
         self.places = []
         self.reviews = []
 
-    def hash_password(self, password):
+    def add_place(self, place):
         """
-        Hash and store the user's password.
-        """
+        Associate a place with the user.
 
-        self.password = bcrypt.generate_password_hash(
-            password
-        ).decode("utf-8")
-
-    def verify_password(self, password):
-        """
-        Verify a password against the stored hash.
+        Args:
+            place (Place): Place owned by the user.
         """
 
-        if not self.password:
-            return False
+        if place not in self.places:
+            self.places.append(place)
 
-        return bcrypt.check_password_hash(
-            self.password,
-            password
-        )
+    def add_review(self, review):
+        """
+        Associate a review with the user.
+
+        Args:
+            review (Review): Review written by the user.
+        """
+
+        if review not in self.reviews:
+            self.reviews.append(review)
 
     def to_dict(self):
         """
         Return a dictionary representation of the user.
-
-        The password is intentionally excluded.
         """
 
         data = super().to_dict()
@@ -79,8 +61,7 @@ class User(BaseModel):
         data.update({
             "first_name": self.first_name,
             "last_name": self.last_name,
-            "email": self.email,
-            "is_admin": self.is_admin
+            "email": self.email
         })
 
         return data

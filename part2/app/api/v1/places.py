@@ -14,10 +14,6 @@ api = Namespace(
 )
 
 
-# ==========================
-# PLACE CRETATION MODEL
-# ==========================
-
 place_model = api.model(
     "Place",
     {
@@ -25,27 +21,22 @@ place_model = api.model(
             required=True,
             description="Place title"
         ),
-
         "description": fields.String(
             required=True,
             description="Place description"
         ),
-
         "price": fields.Float(
             required=True,
             description="Price per night"
         ),
-
         "latitude": fields.Float(
             required=True,
             description="Latitude"
         ),
-
         "longitude": fields.Float(
             required=True,
             description="Longitude"
         ),
-
         "owner_id": fields.String(
             required=True,
             description="Owner ID"
@@ -54,123 +45,168 @@ place_model = api.model(
 )
 
 
-# ==========================
-# PUT MODEL
-# ==========================
-
 update_place_model = api.model(
     "UpdatePlace",
     {
         "title": fields.String(
-            description="Place title"
+            description="Updated place title"
         ),
-
         "description": fields.String(
-            description="Place description"
+            description="Updated place description"
         ),
-
         "price": fields.Float(
-            description="Price per night"
+            description="Updated price per night"
         ),
-
         "latitude": fields.Float(
-            description="Latitude"
+            description="Updated latitude"
         ),
-
         "longitude": fields.Float(
-            description="Longitude"
+            description="Updated longitude"
         )
     }
 )
 
 
-# ==========================
-# PLACE COLLECTION
-# ==========================
+def validate_place_data(place_data, require_all=True):
+    """
+    Validate place creation or update data.
+
+    Args:
+        place_data (dict): Place data to validate.
+        require_all (bool): Whether all creation fields are required.
+
+    Returns:
+        tuple: Validation result and optional error message.
+    """
+
+    allowed_fields = {
+        "title",
+        "description",
+        "price",
+        "latitude",
+        "longitude",
+        "owner_id"
+    }
+
+    if not place_data:
+        return False, "No place data provided"
+
+    if not set(place_data).issubset(allowed_fields):
+        return False, "Invalid place field"
+
+    required_fields = {
+        "title",
+        "description",
+        "price",
+        "latitude",
+        "longitude",
+        "owner_id"
+    }
+
+    if require_all and not required_fields.issubset(place_data):
+        return False, "Missing required place data"
+
+    if "title" in place_data:
+        title = place_data["title"]
+
+        if not isinstance(title, str) or not title.strip():
+            return False, "Title is required"
+
+    if "description" in place_data:
+        description = place_data["description"]
+
+        if (
+            not isinstance(description, str)
+            or not description.strip()
+        ):
+            return False, "Description is required"
+
+    if "price" in place_data:
+        price = place_data["price"]
+
+        if not isinstance(price, (int, float)) or price <= 0:
+            return False, "Price must be greater than zero"
+
+    if "latitude" in place_data:
+        latitude = place_data["latitude"]
+
+        if (
+            not isinstance(latitude, (int, float))
+            or not -90 <= latitude <= 90
+        ):
+            return False, "Latitude must be between -90 and 90"
+
+    if "longitude" in place_data:
+        longitude = place_data["longitude"]
+
+        if (
+            not isinstance(longitude, (int, float))
+            or not -180 <= longitude <= 180
+        ):
+            return False, "Longitude must be between -180 and 180"
+
+    if "owner_id" in place_data:
+        owner_id = place_data["owner_id"]
+
+        if not isinstance(owner_id, str) or not owner_id.strip():
+            return False, "Owner ID is required"
+
+    return True, None
+
+
+def clean_place_data(place_data):
+    """
+    Trim whitespace from place string fields.
+    """
+
+    cleaned_data = place_data.copy()
+
+    for field in ("title", "description", "owner_id"):
+        if field in cleaned_data:
+            cleaned_data[field] = cleaned_data[field].strip()
+
+    return cleaned_data
+
 
 @api.route("/")
 class PlaceList(Resource):
     """
-    Handles place collection operations.
+    Handle place collection operations.
     """
 
-    @api.expect(
-        place_model,
-        validate=True
-    )
-    @api.response(
-        201,
-        "Place successfully created"
-    )
-    @api.response(
-        400,
-        "Invalid input data"
-    )
-    @api.response(
-        404,
-        "Owner not found"
-    )
+    @api.expect(place_model, validate=True)
+    @api.response(201, "Place successfully created")
+    @api.response(400, "Invalid input data")
+    @api.response(404, "Owner not found")
     def post(self):
         """
         Create a new place.
         """
 
-        place_data = api.payload
+        place_data = api.payload.copy()
 
-        # Validate title
-
-        if not place_data["title"].strip():
-            return {
-                "error": "Title is required"
-            }, 400
-
-        # Validate description
-
-        if not place_data["description"].strip():
-            return {
-                "error": "Description is required"
-            }, 400
-
-        # Validate price
-
-        if place_data["price"] <= 0:
-            return {
-                "error":
-                "Price must be greater than zero"
-            }, 400
-
-        # Validate latitude
-
-        if not -90 <= place_data["latitude"] <= 90:
-            return {
-                "error":
-                "Latitude must be between -90 and 90"
-            }, 400
-
-        # Validate longitude
-
-        if not -180 <= place_data["longitude"] <= 180:
-            return {
-                "error":
-                "Longitude must be between -180 and 180"
-            }, 400
-
-        place = facade.create_place(
-            place_data
+        valid, error = validate_place_data(
+            place_data,
+            require_all=True
         )
+
+        if not valid:
+            return {
+                "error": error
+            }, 400
+
+        place_data = clean_place_data(place_data)
+
+        place = facade.create_place(place_data)
 
         if not place:
             return {
-                "error":
-                "Owner not found"
+                "error": "Owner not found"
             }, 404
 
         return place.to_dict(), 201
 
-    @api.response(
-        200,
-        "Places retrieved successfully"
-    )
+    @api.response(200, "Places retrieved successfully")
     def get(self):
         """
         Retrieve all places.
@@ -184,125 +220,63 @@ class PlaceList(Resource):
         ], 200
 
 
-# ==========================
-# SINGLE PLACE
-# ==========================
-
-@api.route(
-    "/<place_id>"
-)
+@api.route("/<place_id>")
 class PlaceResource(Resource):
     """
-    Handles individual place operations.
+    Handle individual place operations.
     """
 
-    @api.response(
-        200,
-        "Place retrieved successfully"
-    )
-    @api.response(
-        404,
-        "Place not found"
-    )
+    @api.response(200, "Place retrieved successfully")
+    @api.response(404, "Place not found")
     def get(self, place_id):
         """
-        Retrieve place by ID.
+        Retrieve a place by ID.
         """
 
-        place = facade.get_place(
-            place_id
-        )
+        place = facade.get_place(place_id)
 
         if not place:
             return {
-                "error":
-                "Place not found"
+                "error": "Place not found"
             }, 404
 
         return place.to_dict(), 200
 
-    @api.expect(
-        update_place_model,
-        validate=True
-    )
-    @api.response(
-        200,
-        "Place updated successfully"
-    )
-    @api.response(
-        400,
-        "Invalid input data"
-    )
-    @api.response(
-        404,
-        "Place not found"
-    )
+    @api.expect(update_place_model, validate=True)
+    @api.response(200, "Place successfully updated")
+    @api.response(400, "Invalid input data")
+    @api.response(404, "Place not found")
     def put(self, place_id):
         """
         Update a place.
         """
 
-        place_data = api.payload
+        place = facade.get_place(place_id)
 
-        # Validate title
+        if not place:
+            return {
+                "error": "Place not found"
+            }, 404
 
-        if "title" in place_data:
-            if not place_data["title"].strip():
-                return {
-                    "error":
-                    "Title cannot be empty"
-                }, 400
+        place_data = api.payload.copy()
 
-        # Validate description
+        valid, error = validate_place_data(
+            place_data,
+            require_all=False
+        )
 
-        if "description" in place_data:
-            if not place_data["description"].strip():
-                return {
-                    "error":
-                    "Description cannot be empty"
-                }, 400
+        if not valid:
+            return {
+                "error": error
+            }, 400
 
-        # Validate price
+        place_data = clean_place_data(place_data)
 
-        if "price" in place_data:
-            if place_data["price"] <= 0:
-                return {
-                    "error":
-                    "Price must be greater than zero"
-                }, 400
+        place_data.pop("owner_id", None)
 
-        # Validate latitude
-
-        if "latitude" in place_data:
-            if not -90 <= place_data["latitude"] <= 90:
-                return {
-                    "error":
-                    "Latitude must be between -90 and 90"
-                }, 400
-
-        # Validate longitude
-
-        if "longitude" in place_data:
-            if not -180 <= place_data["longitude"] <= 180:
-                return {
-                    "error":
-                    "Longitude must be between -180 and 180"
-                }, 400
-
-        # Prevent owner changes
-
-        if "owner_id" in place_data:
-            del place_data["owner_id"]
-
-        place = facade.update_place(
+        updated_place = facade.update_place(
             place_id,
             place_data
         )
 
-        if not place:
-            return {
-                "error":
-                "Place not found"
-            }, 404
-
-        return place.to_dict(), 200
+        return updated_place.to_dict(), 200

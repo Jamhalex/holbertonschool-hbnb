@@ -1,24 +1,37 @@
 sequenceDiagram
 
-actor User
+    actor Client
 
-participant API
-participant Facade
-participant UserModel
-participant Database
+    participant API as User API
+    participant Facade as HBnBFacade
+    participant Repo as UserRepository
+    participant DB as SQLite Database
 
-User->>API: POST /users/register
-API->>Facade: create_user(user_data)
+    Client->>API: POST /users
+    API->>API: Validate request
 
-Facade->>UserModel: validate_user_data()
+    API->>Facade: create_user(user_data)
 
-UserModel-->>Facade: valid
+    Facade->>Repo: get_user_by_email(email)
 
-Facade->>Database: save_user()
+    alt Email already exists
+        Repo-->>Facade: User found
+        Facade-->>API: Error
+        API-->>Client: 400 Email already exists
 
-Database-->>Facade: user_created
+    else Email available
+        Repo-->>Facade: None
 
-Facade-->>API: success response
+        Facade->>Facade: hash_password()
 
-API-->>User: 201 Created
+        Facade->>Repo: add(user)
 
+        Repo->>DB: INSERT user
+        DB-->>Repo: Success
+
+        Repo-->>Facade: User
+
+        Facade-->>API: User
+
+        API-->>Client: 201 Created
+    end

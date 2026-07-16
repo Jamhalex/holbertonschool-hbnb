@@ -1,76 +1,52 @@
 classDiagram
+    class BaseModel {
+        +UUID id
+        +datetime created_at
+        +datetime updated_at
+        +update(data)
+        +to_dict()
+    }
 
-class BaseModel {
-+UUID id
-+datetime created_at
-+datetime updated_at
+    class User {
+        +String first_name
+        +String last_name
+        +String email
+        +String password
+        +Boolean is_admin
+        +hash_password(password)
+        +verify_password(password)
+        +to_dict()
+    }
 
-```
-+save()
-+update()
-+delete()
-```
+    class Place {
+        +String title
+        +String description
+        +Float price
+        +Float latitude
+        +Float longitude
+        +UUID owner_id
+        +add_amenity(amenity)
+        +to_dict()
+    }
 
-}
+    class Review {
+        +String text
+        +UUID user_id
+        +UUID place_id
+        +to_dict()
+    }
 
-class User {
-+String first_name
-+String last_name
-+String email
-+String password
-+Boolean is_admin
+    class Amenity {
+        +String name
+        +to_dict()
+    }
 
-```
-+register()
-+update_profile()
-```
+    BaseModel <|-- User
+    BaseModel <|-- Place
+    BaseModel <|-- Review
+    BaseModel <|-- Amenity
 
-}
-
-class Place {
-+String title
-+String description
-+Float price
-+Float latitude
-+Float longitude
-
-```
-+add_amenity()
-+remove_amenity()
-```
-
-}
-
-class Review {
-+Integer rating
-+String comment
-
-```
-+edit_review()
-```
-
-}
-
-class Amenity {
-+String name
-+String description
-
-```
-+update_amenity()
-```
-
-}
-
-BaseModel <|-- User
-BaseModel <|-- Place
-BaseModel <|-- Review
-BaseModel <|-- Amenity
-
-User "1" --> "*" Place : owns
-
-User "1" --> "*" Review : writes
-
-Place "1" --> "*" Review : receives
-
-Place "*" --> "*" Amenity : includes
-
+    User "1" --> "0..*" Place : owns
+    User "1" --> "0..*" Review : writes
+    Place "1" --> "0..*" Review : receives
+    Place "0..*" --> "0..*" Amenity : includes

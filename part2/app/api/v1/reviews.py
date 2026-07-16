@@ -14,7 +14,6 @@ api = Namespace(
 )
 
 
-# Input / Swagger model
 review_model = api.model(
     "Review",
     {
@@ -34,59 +33,146 @@ review_model = api.model(
 )
 
 
-# =====================
-# Reviews collection
-# =====================
+update_review_model = api.model(
+    "UpdateReview",
+    {
+        "text": fields.String(
+            required=True,
+            description="Updated review text"
+        )
+    }
+)
+
+
+def validate_review_data(review_data, require_relationships=True):
+    """
+    Validate review creation or update data.
+
+    Args:
+        review_data (dict): Review data to validate.
+        require_relationships (bool): Whether user and place IDs are required.
+
+    Returns:
+        tuple: Validation result and optional error message.
+    """
+
+    if not review_data:
+        return False, "No review data provided"
+
+    if require_relationships:
+        allowed_fields = {
+            "text",
+            "user_id",
+            "place_id"
+        }
+
+        required_fields = {
+            "text",
+            "user_id",
+            "place_id"
+        }
+    else:
+        allowed_fields = {
+            "text"
+        }
+
+        required_fields = {
+            "text"
+        }
+
+    if not set(review_data).issubset(allowed_fields):
+        return False, "Invalid review field"
+
+    if not required_fields.issubset(review_data):
+        return False, "Missing required review data"
+
+    text = review_data.get("text")
+
+    if not isinstance(text, str) or not text.strip():
+        return False, "Review text is required"
+
+    if require_relationships:
+        user_id = review_data.get("user_id")
+        place_id = review_data.get("place_id")
+
+        if not isinstance(user_id, str) or not user_id.strip():
+            return False, "User ID is required"
+
+        if not isinstance(place_id, str) or not place_id.strip():
+            return False, "Place ID is required"
+
+    return True, None
+
+
+def clean_review_data(review_data):
+    """
+    Trim whitespace from review string fields.
+    """
+
+    cleaned_data = review_data.copy()
+
+    for field in ("text", "user_id", "place_id"):
+        if field in cleaned_data:
+            cleaned_data[field] = cleaned_data[field].strip()
+
+    return cleaned_data
+
 
 @api.route("/")
 class ReviewList(Resource):
     """
-    Handles review collection operations.
+    Handle review collection operations.
     """
 
     @api.expect(review_model, validate=True)
-    @api.response(201, "Review created successfully")
+    @api.response(201, "Review successfully created")
     @api.response(400, "Invalid input data")
+    @api.response(404, "User or place not found")
     def post(self):
         """
         Create a new review.
         """
 
-        data = api.payload
+        review_data = api.payload.copy()
 
-        # Validate text
-        if not data.get("text"):
-            return {
-                "error": "Review text is required"
-            }, 400
-
-        # Find user
-        user = facade.get_user(
-            data["user_id"]
+        valid, error = validate_review_data(
+            review_data,
+            require_relationships=True
         )
 
-        # Find place
-        place = facade.get_place(
-            data["place_id"]
+        if not valid:
+            return {
+                "error": error
+            }, 400
+
+        review_data = clean_review_data(review_data)
+
+        user = facade.get_user(
+            review_data["user_id"]
         )
 
         if not user:
             return {
                 "error": "User not found"
-            }, 400
+            }, 404
+
+        place = facade.get_place(
+            review_data["place_id"]
+        )
 
         if not place:
             return {
                 "error": "Place not found"
-            }, 400
+            }, 404
 
         review = facade.create_review(
-            {
-                "text": data["text"],
-                "user": user,
-                "place": place
-            }
+            review_data
         )
+
+        if not review:
+            return {
+                "error": "Unable to create review"
+            }, 400
 
         return review.to_dict(), 201
 
@@ -104,26 +190,20 @@ class ReviewList(Resource):
         ], 200
 
 
-# =====================
-# Single review
-# =====================
-
 @api.route("/<review_id>")
 class ReviewResource(Resource):
     """
-    Handles single review operations.
+    Handle individual review operations.
     """
 
     @api.response(200, "Review retrieved successfully")
     @api.response(404, "Review not found")
     def get(self, review_id):
         """
-        Retrieve review by ID.
+        Retrieve a review by ID.
         """
 
-        review = facade.get_review(
-            review_id
-        )
+        review = facade.get_review(review_id)
 
         if not review:
             return {
@@ -132,39 +212,51 @@ class ReviewResource(Resource):
 
         return review.to_dict(), 200
 
-    @api.expect(review_model, validate=True)
-    @api.response(200, "Review updated successfully")
-    @api.response(404, "Review not found")
+    @api.expect(update_review_model, validate=True)
+    @api.response(200, "Review successfully updated")
     @api.response(400, "Invalid input data")
+    @api.response(404, "Review not found")
     def put(self, review_id):
         """
-        Update a review.
+        Update the text of an existing review.
         """
 
-        data = api.payload
-
-        review = facade.update_review(
-            review_id,
-            data
-        )
+        review = facade.get_review(review_id)
 
         if not review:
             return {
                 "error": "Review not found"
             }, 404
 
-        return review.to_dict(), 200
+        review_data = api.payload.copy()
 
-    @api.response(200, "Review deleted successfully")
+        valid, error = validate_review_data(
+            review_data,
+            require_relationships=False
+        )
+
+        if not valid:
+            return {
+                "error": error
+            }, 400
+
+        review_data = clean_review_data(review_data)
+
+        updated_review = facade.update_review(
+            review_id,
+            review_data
+        )
+
+        return updated_review.to_dict(), 200
+
+    @api.response(200, "Review successfully deleted")
     @api.response(404, "Review not found")
     def delete(self, review_id):
         """
         Delete a review.
         """
 
-        deleted = facade.delete_review(
-            review_id
-        )
+        deleted = facade.delete_review(review_id)
 
         if not deleted:
             return {
@@ -174,3 +266,29 @@ class ReviewResource(Resource):
         return {
             "message": "Review deleted successfully"
         }, 200
+
+
+@api.route("/places/<place_id>")
+class PlaceReviewList(Resource):
+    """
+    Handle review retrieval for a specific place.
+    """
+
+    @api.response(200, "Place reviews retrieved successfully")
+    @api.response(404, "Place not found")
+    def get(self, place_id):
+        """
+        Retrieve all reviews associated with a place.
+        """
+
+        reviews = facade.get_reviews_by_place(place_id)
+
+        if reviews is None:
+            return {
+                "error": "Place not found"
+            }, 404
+
+        return [
+            review.to_dict()
+            for review in reviews
+        ], 200
