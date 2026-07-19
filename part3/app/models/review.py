@@ -14,6 +14,14 @@ class Review(BaseModel):
 
     __tablename__ = "reviews"
 
+    __table_args__ = (
+        db.UniqueConstraint(
+            "user_id",
+            "place_id",
+            name="uq_review_user_place"
+        ),
+    )
+
     text = db.Column(
         db.Text,
         nullable=False
@@ -76,7 +84,6 @@ class Review(BaseModel):
                 "text"
             ].strip()
 
-        # Prevent changing ownership
         update_data.pop("user_id", None)
         update_data.pop("place_id", None)
 

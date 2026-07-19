@@ -27,7 +27,6 @@ class HBnBFacade:
         """
         Initialize SQLAlchemy repositories.
         """
-
         self.user_repo = UserRepository()
         self.place_repo = PlaceRepository()
         self.review_repo = ReviewRepository()
@@ -38,48 +37,33 @@ class HBnBFacade:
     def create_user(self, user_data):
         """
         Create and persist a user.
-
-        Args:
-            user_data (dict): User attributes.
-
-        Returns:
-            User: Newly created user.
         """
-
         user = User(**user_data)
-
         return self.user_repo.add(user)
 
     def get_user(self, user_id):
         """
         Retrieve a user by ID.
         """
-
         return self.user_repo.get(user_id)
 
     def get_all_users(self):
         """
         Retrieve all users.
         """
-
         return self.user_repo.get_all()
 
     def get_user_by_email(self, email):
         """
         Retrieve a user by email.
         """
-
         return self.user_repo.get_user_by_email(email)
 
     def update_user(self, user_id, user_data):
         """
         Update and persist a user.
         """
-
-        return self.user_repo.update(
-            user_id,
-            user_data
-        )
+        return self.user_repo.update(user_id, user_data)
 
     # Place operations
 
@@ -87,18 +71,23 @@ class HBnBFacade:
         """
         Create and persist a place.
 
-        Args:
-            place_data (dict): Place attributes.
-
         Returns:
-            Place: Newly created place, or None if owner is missing.
+            Place: Newly created place, or None if validation fails.
         """
-
         owner_id = place_data.get("owner_id")
-        owner = self.user_repo.get(owner_id)
 
-        if not owner:
+        if not self.user_repo.get(owner_id):
             return None
+
+        amenities = []
+
+        for amenity_id in place_data.get("amenity_ids", []):
+            amenity = self.amenity_repo.get(amenity_id)
+
+            if not amenity:
+                return None
+
+            amenities.append(amenity)
 
         place = Place(
             title=place_data["title"],
@@ -109,14 +98,7 @@ class HBnBFacade:
             owner_id=owner_id
         )
 
-        amenity_ids = place_data.get("amenity_ids", [])
-
-        for amenity_id in amenity_ids:
-            amenity = self.amenity_repo.get(amenity_id)
-
-            if not amenity:
-                return None
-
+        for amenity in amenities:
             place.add_amenity(amenity)
 
         return self.place_repo.add(place)
@@ -125,14 +107,12 @@ class HBnBFacade:
         """
         Retrieve a place by ID.
         """
-
         return self.place_repo.get(place_id)
 
     def get_all_places(self):
         """
         Retrieve all places.
         """
-
         return self.place_repo.get_all()
 
     def update_place(self, place_id, place_data):
@@ -141,18 +121,14 @@ class HBnBFacade:
 
         Ownership cannot be changed through this method.
         """
+        if not self.place_repo.get(place_id):
+            return None
 
         update_data = place_data.copy()
         amenity_ids = update_data.pop("amenity_ids", None)
         update_data.pop("owner_id", None)
 
-        place = self.place_repo.update(
-            place_id,
-            update_data
-        )
-
-        if not place:
-            return None
+        amenities = None
 
         if amenity_ids is not None:
             amenities = []
@@ -165,19 +141,21 @@ class HBnBFacade:
 
                 amenities.append(amenity)
 
+        place = self.place_repo.update(place_id, update_data)
+
+        if not place:
+            return None
+
+        if amenities is not None:
             place.amenities = amenities
-            self.place_repo.update(place_id, {})
+            place = self.place_repo.update(place_id, {})
 
         return place
 
     def add_amenity_to_place(self, place_id, amenity_id):
         """
         Associate an amenity with a place.
-
-        Returns:
-            Place: Updated place, or None if either object is missing.
         """
-
         place = self.place_repo.get(place_id)
         amenity = self.amenity_repo.get(amenity_id)
 
@@ -185,17 +163,12 @@ class HBnBFacade:
             return None
 
         place.add_amenity(amenity)
-
         return self.place_repo.update(place_id, {})
 
     def remove_amenity_from_place(self, place_id, amenity_id):
         """
         Remove an amenity from a place.
-
-        Returns:
-            Place: Updated place, or None if either object is missing.
         """
-
         place = self.place_repo.get(place_id)
         amenity = self.amenity_repo.get(amenity_id)
 
@@ -203,7 +176,6 @@ class HBnBFacade:
             return None
 
         place.remove_amenity(amenity)
-
         return self.place_repo.update(place_id, {})
 
     # Amenity operations
@@ -212,30 +184,25 @@ class HBnBFacade:
         """
         Create and persist an amenity.
         """
-
         amenity = Amenity(**amenity_data)
-
         return self.amenity_repo.add(amenity)
 
     def get_amenity(self, amenity_id):
         """
         Retrieve an amenity by ID.
         """
-
         return self.amenity_repo.get(amenity_id)
 
     def get_all_amenities(self):
         """
         Retrieve all amenities.
         """
-
         return self.amenity_repo.get_all()
 
     def get_amenity_by_name(self, name):
         """
         Retrieve an amenity by name.
         """
-
         if not isinstance(name, str) or not name.strip():
             return None
 
@@ -248,7 +215,6 @@ class HBnBFacade:
         """
         Update and persist an amenity.
         """
-
         return self.amenity_repo.update(
             amenity_id,
             amenity_data
@@ -262,15 +228,15 @@ class HBnBFacade:
 
         A user may submit only one review for the same place.
 
-        Args:
-            review_data (dict): Review text, user ID, and place ID.
-
         Returns:
             Review: Newly created review, or None if validation fails.
         """
-
         user_id = review_data.get("user_id")
         place_id = review_data.get("place_id")
+        text = review_data.get("text")
+
+        if not user_id or not place_id or not text:
+            return None
 
         if not self.user_repo.get(user_id):
             return None
@@ -278,20 +244,18 @@ class HBnBFacade:
         if not self.place_repo.get(place_id):
             return None
 
-        existing_reviews = self.review_repo.get_reviews_by_place(
-            place_id
-        )
-
-        duplicate = any(
-            review.user_id == user_id
-            for review in existing_reviews
+        duplicate = (
+            self.review_repo.get_review_by_user_and_place(
+                user_id,
+                place_id
+            )
         )
 
         if duplicate:
             return None
 
         review = Review(
-            text=review_data["text"],
+            text=text,
             user_id=user_id,
             place_id=place_id
         )
@@ -302,14 +266,12 @@ class HBnBFacade:
         """
         Retrieve a review by ID.
         """
-
         return self.review_repo.get(review_id)
 
     def get_all_reviews(self):
         """
         Retrieve all reviews.
         """
-
         return self.review_repo.get_all()
 
     def update_review(self, review_id, review_data):
@@ -318,7 +280,6 @@ class HBnBFacade:
 
         User and place associations cannot be changed.
         """
-
         update_data = review_data.copy()
         update_data.pop("user_id", None)
         update_data.pop("place_id", None)
@@ -332,7 +293,6 @@ class HBnBFacade:
         """
         Delete a review.
         """
-
         return self.review_repo.delete(review_id)
 
     def get_reviews_by_place(self, place_id):
@@ -342,10 +302,7 @@ class HBnBFacade:
         Returns:
             list: Place reviews, or None if the place does not exist.
         """
-
         if not self.place_repo.get(place_id):
             return None
 
-        return self.review_repo.get_reviews_by_place(
-            place_id
-        )
+        return self.review_repo.get_reviews_by_place(place_id)

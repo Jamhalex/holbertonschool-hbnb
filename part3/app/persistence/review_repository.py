@@ -31,10 +31,10 @@ class ReviewRepository(SQLAlchemyRepository):
             list: Reviews belonging to the specified place.
         """
 
-        statement = db.select(
-            Review
-        ).filter_by(
-            place_id=place_id
+        statement = (
+            db.select(Review)
+            .filter_by(place_id=place_id)
+            .order_by(Review.created_at.desc())
         )
 
         return list(
@@ -42,3 +42,31 @@ class ReviewRepository(SQLAlchemyRepository):
                 statement
             ).scalars().all()
         )
+
+    def get_review_by_user_and_place(
+        self,
+        user_id,
+        place_id
+    ):
+        """
+        Retrieve a review by a specific user for a specific place.
+
+        Args:
+            user_id (str): ID of the review author.
+            place_id (str): ID of the reviewed place.
+
+        Returns:
+            Review | None: Matching review if it exists.
+        """
+
+        statement = (
+            db.select(Review)
+            .filter_by(
+                user_id=user_id,
+                place_id=place_id
+            )
+        )
+
+        return db.session.execute(
+            statement
+        ).scalars().first()
