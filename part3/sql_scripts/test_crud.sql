@@ -39,12 +39,14 @@ VALUES (
 INSERT INTO reviews (
     id,
     text,
+    rating,
     user_id,
     place_id
 )
 VALUES (
     '33333333-3333-3333-3333-333333333333',
     'Excellent property',
+    5,
     '11111111-1111-1111-1111-111111111111',
     '22222222-2222-2222-2222-222222222222'
 );

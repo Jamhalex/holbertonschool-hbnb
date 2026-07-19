@@ -66,22 +66,54 @@
                     Available Places
                 </h1>
 
-                <div class="filter-container">
-                    <label for="price-filter">
-                        Maximum price:
-                    </label>
+                <div
+                    class="filters-container"
+                    aria-label="Place filters"
+                >
+                    <div class="filter-container">
+                        <label for="country-filter">
+                            Country:
+                        </label>
 
-                    <select
-                        id="price-filter"
-                        name="price-filter"
-                    >
-                        <option value="10">$10</option>
-                        <option value="50">$50</option>
-                        <option value="100">$100</option>
-                        <option value="all" selected>
-                            All
-                        </option>
-                    </select>
+                        <select
+                            id="country-filter"
+                            name="country-filter"
+                        >
+                            <option value="all">
+                                All countries
+                            </option>
+                        </select>
+                    </div>
+
+                    <div class="filter-container">
+                        <label for="price-filter">
+                            Maximum price:
+                        </label>
+
+                        <select
+                            id="price-filter"
+                            name="price-filter"
+                        >
+                            <option value="10">
+                                $10
+                            </option>
+
+                            <option value="50">
+                                $50
+                            </option>
+
+                            <option value="100">
+                                $100
+                            </option>
+
+                            <option
+                                value="all"
+                                selected
+                            >
+                                All prices
+                            </option>
+                        </select>
+                    </div>
                 </div>
             </div>
 
@@ -91,7 +123,9 @@
                 aria-live="polite"
                 aria-busy="true"
             >
-                <p>Loading places...</p>
+                <p>
+                    Loading places...
+                </p>
             </div>
         </section>
     </main>

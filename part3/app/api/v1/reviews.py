@@ -27,6 +27,12 @@ review_model = api.model(
             required=True,
             description="Review text"
         ),
+        "rating": fields.Integer(
+            required=True,
+            min=1,
+            max=5,
+            description="Rating from 1 to 5"
+        ),
         "place_id": fields.String(
             required=True,
             description="ID of the place being reviewed"
@@ -39,8 +45,14 @@ update_review_model = api.model(
     "UpdateReview",
     {
         "text": fields.String(
-            required=True,
+            required=False,
             description="Updated review text"
+        ),
+        "rating": fields.Integer(
+            required=False,
+            min=1,
+            max=5,
+            description="Updated rating from 1 to 5"
         )
     }
 )
@@ -50,12 +62,10 @@ def serialize_user(user):
     """
     Return public information about a review author.
     """
-
     return {
         "id": user.id,
         "first_name": user.first_name,
-        "last_name": user.last_name,
-        "email": user.email
+        "last_name": user.last_name
     }
 
 
@@ -70,7 +80,6 @@ def serialize_review(review, include_user=False):
     Returns:
         dict: Serialized review data.
     """
-
     review_data = review.to_dict()
 
     if include_user and review.user:
@@ -92,26 +101,26 @@ def validate_review_data(review_data, require_place=True):
     Returns:
         tuple: Validation result and optional error message.
     """
-
     if not review_data:
         return False, "No review data provided"
 
     if require_place:
         allowed_fields = {
             "text",
+            "rating",
             "place_id"
         }
         required_fields = {
             "text",
+            "rating",
             "place_id"
         }
     else:
         allowed_fields = {
-            "text"
+            "text",
+            "rating"
         }
-        required_fields = {
-            "text"
-        }
+        required_fields = set()
 
     if not set(review_data).issubset(allowed_fields):
         return False, "Invalid review field"
@@ -119,10 +128,25 @@ def validate_review_data(review_data, require_place=True):
     if not required_fields.issubset(review_data):
         return False, "Missing required review data"
 
-    text = review_data.get("text")
+    if not require_place and not set(review_data).intersection(
+        allowed_fields
+    ):
+        return False, "No review data provided"
 
-    if not isinstance(text, str) or not text.strip():
-        return False, "Review text is required"
+    if "text" in review_data:
+        text = review_data.get("text")
+
+        if not isinstance(text, str) or not text.strip():
+            return False, "Review text is required"
+
+    if "rating" in review_data:
+        rating = review_data.get("rating")
+
+        if isinstance(rating, bool) or not isinstance(rating, int):
+            return False, "Rating must be an integer"
+
+        if rating < 1 or rating > 5:
+            return False, "Rating must be between 1 and 5"
 
     if require_place:
         place_id = review_data.get("place_id")
@@ -137,7 +161,6 @@ def can_modify_review(review):
     """
     Determine whether the authenticated user may modify a review.
     """
-
     current_user_id = get_jwt_identity()
     claims = get_jwt()
     is_admin = claims.get("is_admin", False)
@@ -161,7 +184,6 @@ class ReviewList(Resource):
         """
         Create a review as the authenticated user.
         """
-
         review_data = api.payload.copy()
 
         valid, error = validate_review_data(
@@ -197,7 +219,7 @@ class ReviewList(Resource):
             review = facade.create_review(
                 review_data
             )
-        except SQLAlchemyError:
+        except (ValueError, SQLAlchemyError):
             return {
                 "error": "Unable to create review"
             }, 400
@@ -220,7 +242,6 @@ class ReviewList(Resource):
         """
         Retrieve all reviews.
         """
-
         reviews = facade.get_all_reviews()
 
         return [
@@ -244,7 +265,6 @@ class ReviewResource(Resource):
         """
         Retrieve a review by ID.
         """
-
         review = facade.get_review(review_id)
 
         if not review:
@@ -271,7 +291,6 @@ class ReviewResource(Resource):
         Review authors may update their own reviews. Administrators may
         update any review.
         """
-
         review = facade.get_review(review_id)
 
         if not review:
@@ -296,19 +315,25 @@ class ReviewResource(Resource):
                 "error": error
             }, 400
 
-        review_data["text"] = review_data[
-            "text"
-        ].strip()
+        if "text" in review_data:
+            review_data["text"] = review_data[
+                "text"
+            ].strip()
 
         try:
             updated_review = facade.update_review(
                 review_id,
                 review_data
             )
-        except SQLAlchemyError:
+        except (ValueError, SQLAlchemyError):
             return {
                 "error": "Unable to update review"
             }, 400
+
+        if not updated_review:
+            return {
+                "error": "Review not found"
+            }, 404
 
         return serialize_review(
             updated_review,
@@ -327,7 +352,6 @@ class ReviewResource(Resource):
         Review authors may delete their own reviews. Administrators may
         delete any review.
         """
-
         review = facade.get_review(review_id)
 
         if not review:
@@ -341,11 +365,16 @@ class ReviewResource(Resource):
             }, 403
 
         try:
-            facade.delete_review(review_id)
+            deleted = facade.delete_review(review_id)
         except SQLAlchemyError:
             return {
                 "error": "Unable to delete review"
             }, 400
+
+        if not deleted:
+            return {
+                "error": "Review not found"
+            }, 404
 
         return {
             "message": "Review deleted successfully"
@@ -364,7 +393,6 @@ class PlaceReviewList(Resource):
         """
         Retrieve all reviews for a place.
         """
-
         reviews = facade.get_reviews_by_place(
             place_id
         )

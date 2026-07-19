@@ -2,7 +2,8 @@
 
 ## Overview
 
-HBnB is a full-stack accommodation management project developed as part of the Holberton School curriculum.
+HBnB is a full-stack accommodation management project developed as
+part of the Holberton School curriculum.
 
 The project is divided into four progressive parts:
 
@@ -11,7 +12,8 @@ The project is divided into four progressive parts:
 3. Authentication and database persistence
 4. Frontend implementation and API integration
 
-The application manages users, places, amenities, and reviews through a layered architecture built with Flask.
+The application manages users, places, amenities, and reviews through
+a layered architecture built with Flask.
 
 ---
 
@@ -20,10 +22,25 @@ The application manages users, places, amenities, and reviews through a layered 
 ```text
 holbertonschool-hbnb/
 ├── part1/
-│   ├── class_diagram.md
-│   ├── high_level_package_diagram.md
-│   ├── sequence_diagrams.md
-│   └── technical_documentation.md
+│   ├── business-logic-layer.md
+│   ├── business-logic-layer.mmd
+│   ├── business-logic-layer.svg
+│   ├── high-level-diagram.md
+│   ├── high-level-diagram.mmd
+│   ├── high-level-diagram.svg
+│   ├── Amenity-Creation-Sequence.md
+│   ├── Amenity-Creation-Sequence.mmd
+│   ├── Amenity-Creation-Sequence.svg
+│   ├── Place-Creation-Sequence.md
+│   ├── Place-Creation-Sequence.mmd
+│   ├── Place-Creation-Sequence.svg
+│   ├── Review-Submission-Sequence.md
+│   ├── Review-Submission-Sequence.mmd
+│   ├── Review-Submission-Sequence.svg
+│   ├── User-Registration-Sequence.md
+│   ├── User-Registration-Sequence.mmd
+│   ├── User-Registration-Sequence.svg
+│   └── technical-documentation.md
 │
 ├── part2/
 │   ├── app/
@@ -31,6 +48,7 @@ holbertonschool-hbnb/
 │   │   ├── models/
 │   │   ├── persistence/
 │   │   └── services/
+│   ├── docs/
 │   ├── tests/
 │   ├── requirements.txt
 │   └── run.py
@@ -41,6 +59,7 @@ holbertonschool-hbnb/
 │   │   ├── models/
 │   │   ├── persistence/
 │   │   └── services/
+│   ├── docs/
 │   ├── sql_scripts/
 │   ├── tests/
 │   ├── config.py
@@ -61,12 +80,12 @@ holbertonschool-hbnb/
 Project Parts
 Part 1 — Technical Documentation
 
-Part 1 defines the architecture before implementation.
+Part 1 defines the application architecture before implementation.
 
 It includes:
 
-High-level package diagram
-Business logic class diagram
+A high-level package diagram
+A business-logic class diagram
 API interaction sequence diagrams
 Layer responsibilities
 Repository and facade design patterns
@@ -89,7 +108,8 @@ Facade pattern
 Automated tests
 Part 3 — Authentication and Database Persistence
 
-Part 3 extends the backend with authentication and relational persistence.
+Part 3 extends the backend with authentication and relational
+persistence.
 
 Features include:
 
@@ -102,8 +122,9 @@ Repository specialization
 Entity relationships
 SQL initialization scripts
 Protected API operations
+CORS support for the frontend
 
-Part 3 is intended to support both the REST API and the Part 4 frontend.
+Part 3 supports both the REST API and the Part 4 frontend.
 
 Part 4 — Frontend
 
@@ -113,11 +134,11 @@ Features include:
 
 User login
 JWT-based authentication
-Places listing
+Place listing
 Price filtering
 Place details
 Owner and amenity information
-Reviews display
+Review display
 Authenticated review submission
 Responsive styling
 Loading, success, empty, and error states
@@ -126,20 +147,20 @@ Architecture
 HBnB follows a layered architecture:
 
 Frontend / API Client
-         |
-         v
+          |
+          v
 Flask-RESTX API
-         |
-         v
+          |
+          v
 Facade Layer
-         |
-         v
+          |
+          v
 Repository Layer
-         |
-         v
+          |
+          v
 Domain Models
-         |
-         v
+          |
+          v
 SQLAlchemy / Database
 Design Patterns
 
@@ -177,7 +198,8 @@ Clone the repository:
 git clone https://github.com/Jamhalex/holbertonschool-hbnb.git
 cd holbertonschool-hbnb
 
-Each backend part has its own dependencies and should be installed from its respective directory.
+Each backend part has its own dependencies and should be installed
+from its respective directory.
 
 Running Part 2
 
@@ -205,6 +227,10 @@ http://127.0.0.1:5000/api/v1/
 Run the tests:
 
 pytest -q
+
+Current verified result:
+
+24 passed
 Running Part 3
 
 Enter Part 3:
@@ -220,6 +246,13 @@ Install dependencies:
 
 pip install -r requirements.txt
 
+Optional development configuration:
+
+export SECRET_KEY="your-development-secret"
+export JWT_SECRET_KEY="your-jwt-secret"
+export HBNB_ADMIN_EMAIL="admin@example.com"
+export HBNB_ADMIN_PASSWORD="strong-password"
+
 Start the API:
 
 python3 run.py
@@ -232,149 +265,71 @@ Run the tests:
 
 pytest -q
 
-Run style checks:
+Current verified result:
 
-pycodestyle app tests
+27 passed
 Running Part 4
 
-Part 4 must be served through an HTTP server instead of opening the HTML files directly.
+Start the Part 3 backend first.
 
-From the repository root:
+From the repository root, serve the frontend:
 
 cd part4
 python3 -m http.server 8000
 
 Open:
 
-http://127.0.0.1:8000
+http://127.0.0.1:8000/
 
-The Part 3 API must also be running at:
+The frontend expects the API at:
 
-http://127.0.0.1:5000
-
-Check the JavaScript syntax with:
-
-node --check scripts.js
-Main API Resources
-
-The API is organized around the following resources:
-
-/api/v1/auth
-/api/v1/users
-/api/v1/places
-/api/v1/amenities
-/api/v1/reviews
-
-Swagger documentation provides the exact methods and request formats supported by each endpoint.
-
+http://127.0.0.1:5000/api/v1
 Authentication
 
-Part 3 uses JSON Web Tokens for authentication.
+Part 3 uses JSON Web Tokens.
 
-A user logs in with an email and password and receives an access token. Protected requests send the token through the HTTP authorization header:
+After a successful login, the API returns an access token:
 
-Authorization: Bearer <access_token>
+{
+  "access_token": "<jwt-token>"
+}
 
-The frontend stores the token in a browser cookie and includes it when submitting authenticated requests.
+Protected requests must include:
 
-The backend must derive the acting user's identity from the JWT rather than accepting a user ID supplied by the frontend.
+Authorization: Bearer <jwt-token>
 
-Domain Entities
-User
+The backend determines the authenticated user from the JWT identity.
+Clients do not provide their own owner_id or user_id for protected
+place and review creation.
 
-Represents a registered account.
+Testing and Style
 
-Important attributes include:
+Run Part 2 checks:
 
-ID
-First name
-Last name
-Email
-Hashed password
-Administrator status
-Place
-
-Represents an accommodation listing.
-
-Important attributes include:
-
-ID
-Title
-Description
-Price
-Latitude
-Longitude
-Owner
-Amenities
-Amenity
-
-Represents a feature offered by a place, such as Wi-Fi.
-
-Review
-
-Represents feedback submitted by an authenticated user for a place.
-
-A review is associated with:
-
-One user
-One place
-Review text
-Creation and update timestamps
-Testing
-
-Run tests from the part being evaluated:
-
+cd part2
 pytest -q
-
-Part 2 and Part 3 use separate implementations and test environments.
-
-Tests should:
-
-Use an isolated test database
-Create database tables before each test group
-Remove database state after tests
-Avoid depending on an existing development database
-Avoid depending on test execution order
-Code Style
-
-Python code should follow pycodestyle requirements:
-
 pycodestyle app tests
 
-JavaScript syntax can be checked with:
+Run Part 3 checks:
+
+cd part3
+pytest -q
+pycodestyle app tests
+
+Check frontend JavaScript syntax:
 
 node --check part4/scripts.js
-Security Considerations
+Security Notes
+Passwords are hashed with Flask-Bcrypt.
+Password hashes are not included in API responses.
+JWT identity determines resource ownership.
+Administrative actions require an administrator claim.
+Database writes roll back when SQLAlchemy operations fail.
+Duplicate reviews are blocked by application logic and a database
+uniqueness constraint.
+Development secrets and administrator credentials should be replaced
+before deploying the application.
 
-The project applies the following practices:
-
-Password hashing
-JWT authentication
-Input validation
-Email uniqueness validation
-Administrator authorization
-Resource ownership checks
-Server-side user identity
-Protected review operations
-Cross-origin request configuration
-
-Security rules must be enforced by the backend and must not rely only on frontend controls.
-
-Current Development Priorities
-
-The main remaining improvements are:
-
-Isolated Part 3 test configuration
-Complete JWT protection for review operations
-Review ownership validation
-Database-level duplicate review prevention
-Dependency consistency
-Full integration testing between Parts 3 and 4
-Documentation synchronization
 Author
 
-Developed by Jamhalex as part of the Holberton School software engineering curriculum.
-
-License
-
-This repository is intended for educational use as part of the Holberton School curriculum.
+Johnson Alexander Martinez

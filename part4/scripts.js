@@ -7,23 +7,35 @@ document.addEventListener("DOMContentLoaded", () => {
     const loginForm = document.getElementById("login-form");
     const placesList = document.getElementById("places-list");
     const priceFilter = document.getElementById("price-filter");
+    const countryFilter = document.getElementById("country-filter");
     const placeDetails = document.getElementById("place-details");
     const reviewForm = document.getElementById("review-form");
-
-    checkAuthentication();
+    const token = checkAuthentication();
 
     if (loginForm) {
         loginForm.addEventListener("submit", handleLogin);
     }
 
     if (placesList) {
-        fetchPlaces();
+        if (!token) {
+            window.location.href = "login.html";
+            return;
+        }
+
+        fetchPlaces(token);
     }
 
     if (priceFilter) {
         priceFilter.addEventListener(
             "change",
-            handlePriceFilter
+            applyPlaceFilters
+        );
+    }
+
+    if (countryFilter) {
+        countryFilter.addEventListener(
+            "change",
+            applyPlaceFilters
         );
     }
 
@@ -139,7 +151,7 @@ async function handleLogin(event) {
 }
 
 
-async function fetchPlaces() {
+async function fetchPlaces(token) {
     const placesList = document.getElementById("places-list");
 
     if (!placesList) {
@@ -152,11 +164,20 @@ async function fetchPlaces() {
         const response = await fetch(
             `${API_URL}/places/`,
             {
-                method: "GET"
+                method: "GET",
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
             }
         );
 
         const data = await parseJsonResponse(response);
+
+        if (response.status === 401) {
+            deleteCookie("token");
+            window.location.href = "login.html";
+            return;
+        }
 
         if (!response.ok) {
             throw new Error(
@@ -169,6 +190,7 @@ async function fetchPlaces() {
             ? data
             : [];
 
+        populateCountryFilter(allPlaces);
         displayPlaces(allPlaces);
     } catch (error) {
         placesList.textContent =
@@ -203,10 +225,14 @@ function displayPlaces(places) {
         const title = document.createElement("h2");
         const description = document.createElement("p");
         const price = document.createElement("p");
+        const country = document.createElement("p");
         const detailsLink = document.createElement("a");
+
+        const placeCountry = getPlaceCountry(place);
 
         card.className = "place-card";
         card.dataset.price = String(place.price);
+        card.dataset.country = placeCountry.toLowerCase();
 
         title.textContent =
             place.title || "Untitled place";
@@ -218,6 +244,11 @@ function displayPlaces(places) {
         price.textContent =
             `Price per night: $${formatPrice(place.price)}`;
 
+        if (placeCountry) {
+            country.textContent =
+                `Country: ${placeCountry}`;
+        }
+
         detailsLink.textContent = "View Details";
         detailsLink.className = "details-button";
         detailsLink.href =
@@ -226,6 +257,11 @@ function displayPlaces(places) {
         card.appendChild(title);
         card.appendChild(description);
         card.appendChild(price);
+
+        if (placeCountry) {
+            card.appendChild(country);
+        }
+
         card.appendChild(detailsLink);
 
         placesList.appendChild(card);
@@ -233,24 +269,107 @@ function displayPlaces(places) {
 }
 
 
-function handlePriceFilter(event) {
-    const selectedValue = event.target.value;
-    const placeCards = document.querySelectorAll(
-        ".place-card"
-    );
+function populateCountryFilter(places) {
+    const countryFilter =
+        document.getElementById("country-filter");
 
-    placeCards.forEach((card) => {
-        const price = Number(card.dataset.price);
+    if (!countryFilter) {
+        return;
+    }
 
-        const shouldDisplay = (
-            selectedValue === "all" ||
-            price <= Number(selectedValue)
+    const countries = places
+        .map((place) => getPlaceCountry(place))
+        .filter((country) => country)
+        .filter(
+            (country, index, values) =>
+                values.indexOf(country) === index
+        )
+        .sort((first, second) =>
+            first.localeCompare(second)
         );
 
-        card.style.display = shouldDisplay
-            ? ""
-            : "none";
+    countryFilter.innerHTML = "";
+
+    const allOption = document.createElement("option");
+
+    allOption.value = "all";
+    allOption.textContent = "All countries";
+    countryFilter.appendChild(allOption);
+
+    countries.forEach((country) => {
+        const option = document.createElement("option");
+
+        option.value = country.toLowerCase();
+        option.textContent = country;
+
+        countryFilter.appendChild(option);
     });
+}
+
+
+function applyPlaceFilters() {
+    const priceFilter =
+        document.getElementById("price-filter");
+
+    const countryFilter =
+        document.getElementById("country-filter");
+
+    const selectedPrice = priceFilter
+        ? priceFilter.value
+        : "all";
+
+    const selectedCountry = countryFilter
+        ? countryFilter.value.toLowerCase()
+        : "all";
+
+    const filteredPlaces = allPlaces.filter((place) => {
+        const price = Number(place.price);
+        const country = getPlaceCountry(place).toLowerCase();
+
+        const priceMatches = (
+            selectedPrice === "all" ||
+            price <= Number(selectedPrice)
+        );
+
+        const countryMatches = (
+            selectedCountry === "all" ||
+            country === selectedCountry
+        );
+
+        return priceMatches && countryMatches;
+    });
+
+    displayPlaces(filteredPlaces);
+}
+
+
+function getPlaceCountry(place) {
+    if (!place || typeof place !== "object") {
+        return "";
+    }
+
+    if (
+        typeof place.country === "string" &&
+        place.country.trim()
+    ) {
+        return place.country.trim();
+    }
+
+    if (
+        place.location &&
+        typeof place.location.country === "string"
+    ) {
+        return place.location.country.trim();
+    }
+
+    if (
+        place.address &&
+        typeof place.address.country === "string"
+    ) {
+        return place.address.country.trim();
+    }
+
+    return "";
 }
 
 
@@ -369,10 +488,13 @@ function displayPlaceDetails(place) {
     const description = document.createElement("p");
     const price = document.createElement("p");
     const owner = document.createElement("p");
+    const country = document.createElement("p");
     const amenitiesTitle = document.createElement("h2");
     const amenitiesList = document.createElement("ul");
     const reviewsTitle = document.createElement("h2");
     const reviewsContainer = document.createElement("div");
+
+    const placeCountry = getPlaceCountry(place);
 
     info.className = "place-info";
 
@@ -388,6 +510,11 @@ function displayPlaceDetails(place) {
 
     owner.textContent =
         `Host: ${getOwnerName(place)}`;
+
+    if (placeCountry) {
+        country.textContent =
+            `Country: ${placeCountry}`;
+    }
 
     amenitiesTitle.textContent = "Amenities";
 
@@ -406,6 +533,11 @@ function displayPlaceDetails(place) {
     info.appendChild(description);
     info.appendChild(price);
     info.appendChild(owner);
+
+    if (placeCountry) {
+        info.appendChild(country);
+    }
+
     info.appendChild(amenitiesTitle);
     info.appendChild(amenitiesList);
     info.appendChild(reviewsTitle);
@@ -461,6 +593,7 @@ function displayReviews(reviews, container) {
         const card = document.createElement("article");
         const text = document.createElement("p");
         const user = document.createElement("p");
+        const rating = document.createElement("p");
 
         card.className = "review-card";
 
@@ -470,11 +603,30 @@ function displayReviews(reviews, container) {
         user.textContent =
             `User: ${getReviewUser(review)}`;
 
+        rating.textContent =
+            `Rating: ${formatRating(review.rating)}/5`;
+
         card.appendChild(text);
         card.appendChild(user);
+        card.appendChild(rating);
 
         container.appendChild(card);
     });
+}
+
+
+function formatRating(rating) {
+    const numericRating = Number(rating);
+
+    if (
+        !Number.isInteger(numericRating) ||
+        numericRating < 1 ||
+        numericRating > 5
+    ) {
+        return "Not rated";
+    }
+
+    return String(numericRating);
 }
 
 
@@ -557,8 +709,13 @@ async function handleReviewSubmission(
     const reviewTextInput =
         document.getElementById("review-text");
 
+    const ratingInput =
+        document.getElementById("rating");
+
     const reviewText =
         reviewTextInput.value.trim();
+
+    const rating = Number(ratingInput.value);
 
     displayReviewMessage("", false);
 
@@ -569,6 +726,20 @@ async function handleReviewSubmission(
         );
 
         reviewTextInput.focus();
+        return;
+    }
+
+    if (
+        !Number.isInteger(rating) ||
+        rating < 1 ||
+        rating > 5
+    ) {
+        displayReviewMessage(
+            "Select a rating between 1 and 5.",
+            true
+        );
+
+        ratingInput.focus();
         return;
     }
 
@@ -583,6 +754,7 @@ async function handleReviewSubmission(
                 },
                 body: JSON.stringify({
                     text: reviewText,
+                    rating,
                     place_id: placeId
                 })
             }
@@ -612,6 +784,7 @@ async function handleReviewSubmission(
         );
 
         reviewTextInput.value = "";
+        ratingInput.value = "";
 
         setTimeout(() => {
             window.location.href =

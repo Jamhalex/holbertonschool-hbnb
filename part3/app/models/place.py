@@ -57,6 +57,7 @@ class Place(BaseModel):
         "Review",
         back_populates="place",
         cascade="all, delete-orphan",
+        order_by="Review.created_at.desc()",
         lazy=True
     )
 

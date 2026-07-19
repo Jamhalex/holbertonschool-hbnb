@@ -20,10 +20,19 @@ class Review(BaseModel):
             "place_id",
             name="uq_review_user_place"
         ),
+        db.CheckConstraint(
+            "rating >= 1 AND rating <= 5",
+            name="ck_review_rating"
+        )
     )
 
     text = db.Column(
         db.Text,
+        nullable=False
+    )
+
+    rating = db.Column(
+        db.Integer,
         nullable=False
     )
 
@@ -56,6 +65,7 @@ class Review(BaseModel):
     def __init__(
         self,
         text,
+        rating,
         user_id,
         place_id
     ):
@@ -64,11 +74,22 @@ class Review(BaseModel):
 
         Args:
             text (str): Review text.
+            rating (int): Rating from 1 through 5.
             user_id (str): ID of the author.
             place_id (str): ID of the reviewed place.
         """
 
+        if not isinstance(text, str) or not text.strip():
+            raise ValueError("Review text is required")
+
+        if isinstance(rating, bool) or not isinstance(rating, int):
+            raise ValueError("Rating must be an integer")
+
+        if rating < 1 or rating > 5:
+            raise ValueError("Rating must be between 1 and 5")
+
         self.text = text.strip()
+        self.rating = rating
         self.user_id = user_id
         self.place_id = place_id
 
@@ -80,9 +101,23 @@ class Review(BaseModel):
         update_data = data.copy()
 
         if "text" in update_data:
-            update_data["text"] = update_data[
-                "text"
-            ].strip()
+            text = update_data["text"]
+
+            if not isinstance(text, str) or not text.strip():
+                raise ValueError("Review text is required")
+
+            update_data["text"] = text.strip()
+
+        if "rating" in update_data:
+            rating = update_data["rating"]
+
+            if isinstance(rating, bool) or not isinstance(rating, int):
+                raise ValueError("Rating must be an integer")
+
+            if rating < 1 or rating > 5:
+                raise ValueError(
+                    "Rating must be between 1 and 5"
+                )
 
         update_data.pop("user_id", None)
         update_data.pop("place_id", None)
@@ -98,6 +133,7 @@ class Review(BaseModel):
 
         data.update({
             "text": self.text,
+            "rating": self.rating,
             "user_id": self.user_id,
             "place_id": self.place_id
         })

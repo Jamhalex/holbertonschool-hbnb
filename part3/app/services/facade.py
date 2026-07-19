@@ -234,8 +234,14 @@ class HBnBFacade:
         user_id = review_data.get("user_id")
         place_id = review_data.get("place_id")
         text = review_data.get("text")
+        rating = review_data.get("rating")
 
-        if not user_id or not place_id or not text:
+        if (
+            not user_id
+            or not place_id
+            or not text
+            or rating is None
+        ):
             return None
 
         if not self.user_repo.get(user_id):
@@ -256,6 +262,7 @@ class HBnBFacade:
 
         review = Review(
             text=text,
+            rating=rating,
             user_id=user_id,
             place_id=place_id
         )

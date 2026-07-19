@@ -25,7 +25,7 @@ CREATE TABLE places (
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     title VARCHAR(100) NOT NULL,
     description TEXT,
-    price DECIMAL(10, 2) NOT NULL CHECK (price >= 0),
+    price DECIMAL(10, 2) NOT NULL CHECK (price > 0),
     latitude FLOAT NOT NULL
         CHECK (latitude >= -90 AND latitude <= 90),
     longitude FLOAT NOT NULL
@@ -41,6 +41,8 @@ CREATE TABLE reviews (
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     text TEXT NOT NULL,
+    rating INTEGER NOT NULL
+        CHECK (rating >= 1 AND rating <= 5),
     user_id VARCHAR(36) NOT NULL,
     place_id VARCHAR(36) NOT NULL,
     FOREIGN KEY (user_id)
@@ -49,7 +51,8 @@ CREATE TABLE reviews (
     FOREIGN KEY (place_id)
         REFERENCES places(id)
         ON DELETE CASCADE,
-    UNIQUE (user_id, place_id)
+    CONSTRAINT uq_review_user_place
+        UNIQUE (user_id, place_id)
 );
 
 CREATE TABLE amenities (

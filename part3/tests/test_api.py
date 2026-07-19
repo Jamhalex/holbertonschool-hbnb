@@ -19,7 +19,6 @@ class HBnBApiTestCase(unittest.TestCase):
         """
         Create a fresh in-memory database for each test.
         """
-
         self.app = create_app("config.TestingConfig")
         self.context = self.app.app_context()
         self.context.push()
@@ -32,7 +31,6 @@ class HBnBApiTestCase(unittest.TestCase):
         """
         Remove all database data after each test.
         """
-
         db.session.remove()
         db.drop_all()
         self.context.pop()
@@ -46,7 +44,6 @@ class HBnBApiTestCase(unittest.TestCase):
         """
         Create a user directly through the facade.
         """
-
         return facade.create_user({
             "first_name": "Test",
             "last_name": "User",
@@ -59,7 +56,6 @@ class HBnBApiTestCase(unittest.TestCase):
         """
         Log in and return a JWT access token.
         """
-
         response = self.client.post(
             "/api/v1/auth/login",
             json={
@@ -76,7 +72,6 @@ class HBnBApiTestCase(unittest.TestCase):
         """
         Return an Authorization header.
         """
-
         return {
             "Authorization": f"Bearer {token}"
         }
@@ -85,7 +80,6 @@ class HBnBApiTestCase(unittest.TestCase):
         """
         Create an administrator and return its token.
         """
-
         self.create_user(
             email="admin@test.com",
             password="admin123",
@@ -97,22 +91,45 @@ class HBnBApiTestCase(unittest.TestCase):
             "admin123"
         )
 
-    def create_regular_token(self):
+    def create_regular_token(
+        self,
+        email="regular@test.com",
+        password="regular123"
+    ):
         """
         Create a regular user and return the user and token.
         """
-
         user = self.create_user(
-            email="regular@test.com",
-            password="regular123"
+            email=email,
+            password=password
         )
 
         token = self.login(
-            "regular@test.com",
-            "regular123"
+            email,
+            password
         )
 
         return user, token
+
+    def create_place(self, token, title="Test Place"):
+        """
+        Create a place and return its ID.
+        """
+        response = self.client.post(
+            "/api/v1/places/",
+            headers=self.auth_headers(token),
+            json={
+                "title": title,
+                "description": "Test place description",
+                "price": 100,
+                "latitude": 18.2,
+                "longitude": -66.2
+            }
+        )
+
+        self.assertEqual(response.status_code, 201)
+
+        return response.get_json()["id"]
 
     # User tests
 
@@ -120,7 +137,6 @@ class HBnBApiTestCase(unittest.TestCase):
         """
         Test that an administrator can create a user.
         """
-
         token = self.create_admin_token()
 
         response = self.client.post(
@@ -147,7 +163,6 @@ class HBnBApiTestCase(unittest.TestCase):
         """
         Test that a regular user cannot create another user.
         """
-
         _, token = self.create_regular_token()
 
         response = self.client.post(
@@ -167,7 +182,6 @@ class HBnBApiTestCase(unittest.TestCase):
         """
         Test that user creation requires a JWT.
         """
-
         response = self.client.post(
             "/api/v1/users/",
             json={
@@ -184,7 +198,6 @@ class HBnBApiTestCase(unittest.TestCase):
         """
         Test that a user can update their own name.
         """
-
         user, token = self.create_regular_token()
 
         response = self.client.put(
@@ -205,7 +218,6 @@ class HBnBApiTestCase(unittest.TestCase):
         """
         Test that regular users cannot update their email.
         """
-
         user, token = self.create_regular_token()
 
         response = self.client.put(
@@ -224,7 +236,6 @@ class HBnBApiTestCase(unittest.TestCase):
         """
         Test that an administrator can create an amenity.
         """
-
         token = self.create_admin_token()
 
         response = self.client.post(
@@ -245,7 +256,6 @@ class HBnBApiTestCase(unittest.TestCase):
         """
         Test that regular users cannot create amenities.
         """
-
         _, token = self.create_regular_token()
 
         response = self.client.post(
@@ -262,7 +272,6 @@ class HBnBApiTestCase(unittest.TestCase):
         """
         Test that amenity creation requires a JWT.
         """
-
         response = self.client.post(
             "/api/v1/amenities/",
             json={
@@ -278,7 +287,6 @@ class HBnBApiTestCase(unittest.TestCase):
         """
         Test place creation by an authenticated user.
         """
-
         user, token = self.create_regular_token()
 
         response = self.client.post(
@@ -305,7 +313,6 @@ class HBnBApiTestCase(unittest.TestCase):
         """
         Test that place creation requires a JWT.
         """
-
         response = self.client.post(
             "/api/v1/places/",
             json={
@@ -323,7 +330,6 @@ class HBnBApiTestCase(unittest.TestCase):
         """
         Test that a place owner can update their place.
         """
-
         _, token = self.create_regular_token()
 
         created = self.client.post(
@@ -358,7 +364,6 @@ class HBnBApiTestCase(unittest.TestCase):
         """
         Test that another regular user cannot update a place.
         """
-
         _, owner_token = self.create_regular_token()
 
         created = self.client.post(
@@ -401,31 +406,15 @@ class HBnBApiTestCase(unittest.TestCase):
         """
         Test review creation by an authenticated user.
         """
-
         _, owner_token = self.create_regular_token()
-
-        place_response = self.client.post(
-            "/api/v1/places/",
-            headers=self.auth_headers(owner_token),
-            json={
-                "title": "Apartment",
-                "description": "City apartment",
-                "price": 90,
-                "latitude": 18.3,
-                "longitude": -66.0
-            }
+        place_id = self.create_place(
+            owner_token,
+            title="Apartment"
         )
 
-        place_id = place_response.get_json()["id"]
-
-        self.create_user(
+        _, reviewer_token = self.create_regular_token(
             email="reviewer@test.com",
             password="review123"
-        )
-
-        reviewer_token = self.login(
-            "reviewer@test.com",
-            "review123"
         )
 
         response = self.client.post(
@@ -433,6 +422,7 @@ class HBnBApiTestCase(unittest.TestCase):
             headers=self.auth_headers(reviewer_token),
             json={
                 "text": "Great place",
+                "rating": 5,
                 "place_id": place_id
             }
         )
@@ -442,17 +432,19 @@ class HBnBApiTestCase(unittest.TestCase):
         data = response.get_json()
 
         self.assertEqual(data["text"], "Great place")
+        self.assertEqual(data["rating"], 5)
+        self.assertEqual(data["place_id"], place_id)
         self.assertIn("user", data)
 
     def test_create_review_requires_authentication(self):
         """
         Test that review creation requires a JWT.
         """
-
         response = self.client.post(
             "/api/v1/reviews/",
             json={
                 "text": "Great place",
+                "rating": 5,
                 "place_id": "fake-place"
             }
         )
@@ -463,31 +455,15 @@ class HBnBApiTestCase(unittest.TestCase):
         """
         Test that the review author can update a review.
         """
-
         _, owner_token = self.create_regular_token()
-
-        place_response = self.client.post(
-            "/api/v1/places/",
-            headers=self.auth_headers(owner_token),
-            json={
-                "title": "Apartment",
-                "description": "City apartment",
-                "price": 90,
-                "latitude": 18.3,
-                "longitude": -66.0
-            }
+        place_id = self.create_place(
+            owner_token,
+            title="Apartment"
         )
 
-        place_id = place_response.get_json()["id"]
-
-        self.create_user(
+        _, reviewer_token = self.create_regular_token(
             email="reviewer@test.com",
             password="review123"
-        )
-
-        reviewer_token = self.login(
-            "reviewer@test.com",
-            "review123"
         )
 
         created = self.client.post(
@@ -495,9 +471,12 @@ class HBnBApiTestCase(unittest.TestCase):
             headers=self.auth_headers(reviewer_token),
             json={
                 "text": "Good",
+                "rating": 3,
                 "place_id": place_id
             }
         )
+
+        self.assertEqual(created.status_code, 201)
 
         review_id = created.get_json()["id"]
 
@@ -505,7 +484,8 @@ class HBnBApiTestCase(unittest.TestCase):
             f"/api/v1/reviews/{review_id}",
             headers=self.auth_headers(reviewer_token),
             json={
-                "text": "Excellent"
+                "text": "Excellent",
+                "rating": 5
             }
         )
 
@@ -514,30 +494,24 @@ class HBnBApiTestCase(unittest.TestCase):
             response.get_json()["text"],
             "Excellent"
         )
+        self.assertEqual(
+            response.get_json()["rating"],
+            5
+        )
 
     def test_duplicate_review_is_rejected(self):
         """
         Test that one user cannot review one place twice.
         """
-
         _, token = self.create_regular_token()
-
-        place_response = self.client.post(
-            "/api/v1/places/",
-            headers=self.auth_headers(token),
-            json={
-                "title": "House",
-                "description": "Test house",
-                "price": 100,
-                "latitude": 18.2,
-                "longitude": -66.2
-            }
+        place_id = self.create_place(
+            token,
+            title="House"
         )
-
-        place_id = place_response.get_json()["id"]
 
         review_data = {
             "text": "First review",
+            "rating": 4,
             "place_id": place_id
         }
 
@@ -555,6 +529,129 @@ class HBnBApiTestCase(unittest.TestCase):
 
         self.assertEqual(first.status_code, 201)
         self.assertEqual(second.status_code, 400)
+
+    def test_review_requires_rating(self):
+        """
+        Test that review creation requires a rating.
+        """
+        _, owner_token = self.create_regular_token(
+            email="owner-rating@test.com",
+            password="owner123"
+        )
+
+        place_id = self.create_place(
+            owner_token,
+            title="Rating House"
+        )
+
+        _, reviewer_token = self.create_regular_token(
+            email="reviewer-rating@test.com",
+            password="review123"
+        )
+
+        response = self.client.post(
+            "/api/v1/reviews/",
+            headers=self.auth_headers(reviewer_token),
+            json={
+                "text": "Missing rating",
+                "place_id": place_id
+            }
+        )
+
+        self.assertEqual(response.status_code, 400)
+
+    def test_review_rejects_rating_below_one(self):
+        """
+        Test that ratings below one are rejected.
+        """
+        _, owner_token = self.create_regular_token(
+            email="owner-low@test.com",
+            password="owner123"
+        )
+
+        place_id = self.create_place(
+            owner_token,
+            title="Low Rating House"
+        )
+
+        _, reviewer_token = self.create_regular_token(
+            email="reviewer-low@test.com",
+            password="review123"
+        )
+
+        response = self.client.post(
+            "/api/v1/reviews/",
+            headers=self.auth_headers(reviewer_token),
+            json={
+                "text": "Invalid low rating",
+                "rating": 0,
+                "place_id": place_id
+            }
+        )
+
+        self.assertEqual(response.status_code, 400)
+
+    def test_review_rejects_rating_above_five(self):
+        """
+        Test that ratings above five are rejected.
+        """
+        _, owner_token = self.create_regular_token(
+            email="owner-high@test.com",
+            password="owner123"
+        )
+
+        place_id = self.create_place(
+            owner_token,
+            title="High Rating House"
+        )
+
+        _, reviewer_token = self.create_regular_token(
+            email="reviewer-high@test.com",
+            password="review123"
+        )
+
+        response = self.client.post(
+            "/api/v1/reviews/",
+            headers=self.auth_headers(reviewer_token),
+            json={
+                "text": "Invalid high rating",
+                "rating": 6,
+                "place_id": place_id
+            }
+        )
+
+        self.assertEqual(response.status_code, 400)
+
+    def test_review_rejects_boolean_rating(self):
+        """
+        Test that a Boolean value is not accepted as a rating.
+        """
+        _, owner_token = self.create_regular_token(
+            email="owner-bool@test.com",
+            password="owner123"
+        )
+
+        place_id = self.create_place(
+            owner_token,
+            title="Boolean Rating House"
+        )
+
+        _, reviewer_token = self.create_regular_token(
+            email="reviewer-bool@test.com",
+            password="review123"
+        )
+
+        response = self.client.post(
+            "/api/v1/reviews/",
+            headers=self.auth_headers(reviewer_token),
+            json={
+                "text": "Boolean rating test",
+                "rating": True,
+                "place_id": place_id
+            }
+        )
+
+        self.assertEqual(response.status_code, 400)
 
 
 if __name__ == "__main__":

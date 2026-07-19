@@ -60,6 +60,7 @@
 
             <form
                 id="review-form"
+                class="add-review form"
                 novalidate
             >
                 <label for="review-text">
@@ -71,8 +72,43 @@
                     name="review"
                     rows="6"
                     required
+                    maxlength="2048"
                     placeholder="Write your review here..."
                 ></textarea>
+
+                <label for="rating">
+                    Rating
+                </label>
+
+                <select
+                    id="rating"
+                    name="rating"
+                    required
+                >
+                    <option value="">
+                        Select a rating
+                    </option>
+
+                    <option value="1">
+                        1 - Poor
+                    </option>
+
+                    <option value="2">
+                        2 - Fair
+                    </option>
+
+                    <option value="3">
+                        3 - Good
+                    </option>
+
+                    <option value="4">
+                        4 - Very Good
+                    </option>
+
+                    <option value="5">
+                        5 - Excellent
+                    </option>
+                </select>
 
                 <button type="submit">
                     Submit Review
