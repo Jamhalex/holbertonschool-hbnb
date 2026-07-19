@@ -2,250 +2,379 @@
 
 ## Overview
 
-HBnB is a full-stack accommodation management platform developed as part of the Holberton School curriculum. The project follows a progressive architecture, beginning with object-oriented design and evolving into a secure REST API backed by a relational database.
+HBnB is a full-stack accommodation management project developed as part of the Holberton School curriculum.
 
-Throughout the project, modern backend development concepts are implemented, including:
+The project is divided into four progressive parts:
 
-* Object-Oriented Programming (OOP)
-* RESTful API design
-* Flask Application Factory pattern
-* JWT Authentication
-* Password hashing with Bcrypt
-* Repository and Facade design patterns
-* SQLAlchemy ORM
-* SQLite for development
-* MySQL-ready architecture for production
+1. Software architecture and UML design
+2. Business logic and REST API development
+3. Authentication and database persistence
+4. Frontend implementation and API integration
+
+The application manages users, places, amenities, and reviews through a layered architecture built with Flask.
 
 ---
 
-# Repository Structure
+## Repository Structure
 
-```
+```text
 holbertonschool-hbnb/
-│
 ├── part1/
-│   ├── Business logic layer
-│   ├── Domain models
-│   └── UML design
+│   ├── class_diagram.md
+│   ├── high_level_package_diagram.md
+│   ├── sequence_diagrams.md
+│   └── technical_documentation.md
 │
 ├── part2/
-│   ├── REST API
-│   ├── CRUD endpoints
-│   ├── Swagger documentation
-│   └── Unit tests
+│   ├── app/
+│   │   ├── api/
+│   │   ├── models/
+│   │   ├── persistence/
+│   │   └── services/
+│   ├── tests/
+│   ├── requirements.txt
+│   └── run.py
 │
 ├── part3/
-│   ├── JWT Authentication
-│   ├── Role-based authorization
-│   ├── SQLAlchemy integration
-│   ├── SQLite persistence
-│   └── Database-ready architecture
+│   ├── app/
+│   │   ├── api/
+│   │   ├── models/
+│   │   ├── persistence/
+│   │   └── services/
+│   ├── sql_scripts/
+│   ├── tests/
+│   ├── config.py
+│   ├── requirements.txt
+│   └── run.py
 │
+├── part4/
+│   ├── images/
+│   ├── add_review.html
+│   ├── index.html
+│   ├── login.html
+│   ├── place.html
+│   ├── scripts.js
+│   └── styles.css
+│
+├── .gitignore
 └── README.md
-```
+Project Parts
+Part 1 — Technical Documentation
 
----
+Part 1 defines the architecture before implementation.
 
-# Technologies
+It includes:
 
-* Python 3
-* Flask
-* Flask-RESTX
-* Flask-Bcrypt
-* Flask-JWT-Extended
-* Flask-SQLAlchemy
-* SQLite
-* MySQL (production ready)
-* unittest
-* pycodestyle
+High-level package diagram
+Business logic class diagram
+API interaction sequence diagrams
+Layer responsibilities
+Repository and facade design patterns
+Technical documentation
+Part 2 — Business Logic and REST API
 
----
+Part 2 implements the initial backend using in-memory persistence.
 
-# Features
+Features include:
 
-## User Management
+User management
+Place management
+Amenity management
+Review management
+Input validation
+Flask-RESTX API namespaces
+Swagger API documentation
+Repository pattern
+Facade pattern
+Automated tests
+Part 3 — Authentication and Database Persistence
 
-* User registration
-* Password hashing
-* JWT login
-* User profile management
-* Administrator accounts
+Part 3 extends the backend with authentication and relational persistence.
 
-## Authentication
+Features include:
 
-* Secure JWT authentication
-* Token-based authorization
-* Protected endpoints
-* Administrator permissions
-
-## Places
-
-* Create places
-* Update places
-* Retrieve places
-* Ownership validation
-
-## Reviews
-
-* Create reviews
-* Update reviews
-* Ownership validation
-* Duplicate review prevention
-
-## Amenities
-
-* Create amenities
-* Update amenities
-* Administrator-only management
-
----
-
-# Architecture
-
-The project follows a layered architecture.
-
-```
-Presentation Layer
-        │
-        ▼
-REST API (Flask-RESTX)
-        │
-        ▼
-Facade Layer
-        │
-        ▼
-Repository Layer
-        │
-        ▼
 SQLAlchemy ORM
-        │
-        ▼
-SQLite / MySQL
-```
+SQLite development database
+Password hashing with Flask-Bcrypt
+JWT authentication
+Administrator accounts
+Repository specialization
+Entity relationships
+SQL initialization scripts
+Protected API operations
 
----
+Part 3 is intended to support both the REST API and the Part 4 frontend.
 
-# Design Patterns
+Part 4 — Frontend
 
-* Application Factory
-* Repository Pattern
-* Facade Pattern
-* ORM (SQLAlchemy)
+Part 4 provides a browser-based interface for the HBnB API.
 
----
+Features include:
 
-# Installation
+User login
+JWT-based authentication
+Places listing
+Price filtering
+Place details
+Owner and amenity information
+Reviews display
+Authenticated review submission
+Responsive styling
+Loading, success, empty, and error states
+Architecture
+
+HBnB follows a layered architecture:
+
+Frontend / API Client
+         |
+         v
+Flask-RESTX API
+         |
+         v
+Facade Layer
+         |
+         v
+Repository Layer
+         |
+         v
+Domain Models
+         |
+         v
+SQLAlchemy / Database
+Design Patterns
+
+The project uses:
+
+Application Factory pattern
+Facade pattern
+Repository pattern
+Object-relational mapping
+Layered architecture
+Technologies
+Backend
+Python 3
+Flask
+Flask-RESTX
+Flask-SQLAlchemy
+Flask-Bcrypt
+Flask-JWT-Extended
+Flask-CORS
+SQLite
+Frontend
+HTML5
+CSS3
+JavaScript
+Fetch API
+Development and Testing
+pytest
+pycodestyle
+Git
+GitHub
+Installation
 
 Clone the repository:
 
-```bash
-git clone https://github.com/<your-username>/holbertonschool-hbnb.git
-```
-
-Enter the project:
-
-```bash
+git clone https://github.com/Jamhalex/holbertonschool-hbnb.git
 cd holbertonschool-hbnb
-```
 
-Choose the desired project part:
+Each backend part has its own dependencies and should be installed from its respective directory.
 
-```bash
-cd part3
-```
+Running Part 2
 
-Create a virtual environment:
+Enter Part 2:
 
-```bash
+cd part2
+
+Create and activate a virtual environment:
+
 python3 -m venv venv
-```
-
-Activate it:
-
-Linux/macOS
-
-```bash
 source venv/bin/activate
-```
 
 Install dependencies:
 
-```bash
 pip install -r requirements.txt
-```
 
----
+Start the API:
 
-# Running the Application
-
-```bash
 python3 run.py
-```
 
-Default address:
+The API documentation is available at:
 
-```
-http://127.0.0.1:5000
-```
-
-Swagger documentation:
-
-```
 http://127.0.0.1:5000/api/v1/
-```
 
----
+Run the tests:
 
-# Testing
+pytest -q
+Running Part 3
 
-Run unit tests:
+Enter Part 3:
 
-```bash
-python3 -m unittest discover
-```
+cd part3
 
-Run code style checks:
+Create and activate a virtual environment:
 
-```bash
-pycodestyle app
-```
+python3 -m venv venv
+source venv/bin/activate
 
----
+Install dependencies:
 
-# Security
+pip install -r requirements.txt
 
-The project implements several security best practices:
+Start the API:
 
-* Password hashing using Bcrypt
-* JWT authentication
-* Role-based authorization
-* Administrator privileges
-* Input validation
-* Protected API endpoints
-* Email uniqueness validation
+python3 run.py
 
----
+The API documentation is available at:
 
-# Future Improvements
+http://127.0.0.1:5000/api/v1/
 
-* Complete SQLAlchemy mapping for all entities
-* MySQL production configuration
-* Docker support
-* CI/CD pipeline
-* API rate limiting
-* Refresh tokens
-* Pagination and filtering
-* Automated integration tests
+Run the tests:
 
----
+pytest -q
 
-# Authors
+Run style checks:
 
-Developed as part of the Holberton School curriculum.
+pycodestyle app tests
+Running Part 4
 
----
+Part 4 must be served through an HTTP server instead of opening the HTML files directly.
 
-# License
+From the repository root:
 
-This project is intended for educational purposes as part of the Holberton School software engineering program.
+cd part4
+python3 -m http.server 8000
 
+Open:
+
+http://127.0.0.1:8000
+
+The Part 3 API must also be running at:
+
+http://127.0.0.1:5000
+
+Check the JavaScript syntax with:
+
+node --check scripts.js
+Main API Resources
+
+The API is organized around the following resources:
+
+/api/v1/auth
+/api/v1/users
+/api/v1/places
+/api/v1/amenities
+/api/v1/reviews
+
+Swagger documentation provides the exact methods and request formats supported by each endpoint.
+
+Authentication
+
+Part 3 uses JSON Web Tokens for authentication.
+
+A user logs in with an email and password and receives an access token. Protected requests send the token through the HTTP authorization header:
+
+Authorization: Bearer <access_token>
+
+The frontend stores the token in a browser cookie and includes it when submitting authenticated requests.
+
+The backend must derive the acting user's identity from the JWT rather than accepting a user ID supplied by the frontend.
+
+Domain Entities
+User
+
+Represents a registered account.
+
+Important attributes include:
+
+ID
+First name
+Last name
+Email
+Hashed password
+Administrator status
+Place
+
+Represents an accommodation listing.
+
+Important attributes include:
+
+ID
+Title
+Description
+Price
+Latitude
+Longitude
+Owner
+Amenities
+Amenity
+
+Represents a feature offered by a place, such as Wi-Fi.
+
+Review
+
+Represents feedback submitted by an authenticated user for a place.
+
+A review is associated with:
+
+One user
+One place
+Review text
+Creation and update timestamps
+Testing
+
+Run tests from the part being evaluated:
+
+pytest -q
+
+Part 2 and Part 3 use separate implementations and test environments.
+
+Tests should:
+
+Use an isolated test database
+Create database tables before each test group
+Remove database state after tests
+Avoid depending on an existing development database
+Avoid depending on test execution order
+Code Style
+
+Python code should follow pycodestyle requirements:
+
+pycodestyle app tests
+
+JavaScript syntax can be checked with:
+
+node --check part4/scripts.js
+Security Considerations
+
+The project applies the following practices:
+
+Password hashing
+JWT authentication
+Input validation
+Email uniqueness validation
+Administrator authorization
+Resource ownership checks
+Server-side user identity
+Protected review operations
+Cross-origin request configuration
+
+Security rules must be enforced by the backend and must not rely only on frontend controls.
+
+Current Development Priorities
+
+The main remaining improvements are:
+
+Isolated Part 3 test configuration
+Complete JWT protection for review operations
+Review ownership validation
+Database-level duplicate review prevention
+Dependency consistency
+Full integration testing between Parts 3 and 4
+Documentation synchronization
+Author
+
+Developed by Jamhalex as part of the Holberton School software engineering curriculum.
+
+License
+
+This repository is intended for educational use as part of the Holberton School curriculum.
