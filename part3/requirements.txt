@@ -1,6 +1,8 @@
 Flask
 flask-restx
-pytest
 Flask-Bcrypt
 flask-jwt-extended
 flask-sqlalchemy
+flask-cors
+pytest
+pycodestyle
