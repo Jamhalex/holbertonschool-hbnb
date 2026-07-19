@@ -13,6 +13,7 @@
     <link
         rel="icon"
         href="images/icon.png"
+        type="image/png"
     >
 
     <link
@@ -24,8 +25,11 @@
 <body>
 
     <header>
-        <nav>
-            <a href="index.html">
+        <nav aria-label="Main navigation">
+            <a
+                href="index.html"
+                aria-label="HBnB home page"
+            >
                 <img
                     src="images/logo.png"
                     alt="HBnB Logo"
@@ -41,6 +45,7 @@
                 <a
                     href="login.html"
                     class="login-button"
+                    aria-current="page"
                 >
                     Login
                 </a>
@@ -50,7 +55,11 @@
 
     <main class="login-main">
 
-        <form id="login-form" class="form">
+        <form
+            id="login-form"
+            class="form"
+            novalidate
+        >
 
             <h1>Login</h1>
 
@@ -71,6 +80,7 @@
                 name="email"
                 autocomplete="email"
                 required
+                autofocus
             >
 
             <label for="password">

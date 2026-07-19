@@ -13,6 +13,7 @@
     <link
         rel="icon"
         href="images/icon.png"
+        type="image/png"
     >
 
     <link
@@ -24,8 +25,11 @@
 <body>
 
     <header>
-        <nav>
-            <a href="index.html">
+        <nav aria-label="Main navigation">
+            <a
+                href="index.html"
+                aria-label="HBnB home page"
+            >
                 <img
                     src="images/logo.png"
                     alt="HBnB Logo"
@@ -34,7 +38,10 @@
             </a>
 
             <div class="navigation">
-                <a href="index.html">
+                <a
+                    href="index.html"
+                    aria-current="page"
+                >
                     Home
                 </a>
 
@@ -50,19 +57,24 @@
     </header>
 
     <main>
-
-        <section class="places-section">
-
+        <section
+            class="places-section"
+            aria-labelledby="places-title"
+        >
             <div class="places-heading">
-
-                <h1>Available Places</h1>
+                <h1 id="places-title">
+                    Available Places
+                </h1>
 
                 <div class="filter-container">
                     <label for="price-filter">
                         Maximum price:
                     </label>
 
-                    <select id="price-filter">
+                    <select
+                        id="price-filter"
+                        name="price-filter"
+                    >
                         <option value="10">$10</option>
                         <option value="50">$50</option>
                         <option value="100">$100</option>
@@ -71,19 +83,17 @@
                         </option>
                     </select>
                 </div>
-
             </div>
 
             <div
                 id="places-list"
                 class="places-container"
                 aria-live="polite"
+                aria-busy="true"
             >
                 <p>Loading places...</p>
             </div>
-
         </section>
-
     </main>
 
     <footer>
