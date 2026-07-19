@@ -22,23 +22,27 @@ class Review(BaseModel):
     user_id = db.Column(
         db.String(36),
         db.ForeignKey("users.id"),
-        nullable=False
+        nullable=False,
+        index=True
     )
 
     place_id = db.Column(
         db.String(36),
         db.ForeignKey("places.id"),
-        nullable=False
+        nullable=False,
+        index=True
     )
 
     user = db.relationship(
         "User",
-        back_populates="reviews"
+        back_populates="reviews",
+        lazy=True
     )
 
     place = db.relationship(
         "Place",
-        back_populates="reviews"
+        back_populates="reviews",
+        lazy=True
     )
 
     def __init__(
@@ -49,11 +53,34 @@ class Review(BaseModel):
     ):
         """
         Initialize a Review instance.
+
+        Args:
+            text (str): Review text.
+            user_id (str): ID of the author.
+            place_id (str): ID of the reviewed place.
         """
 
-        self.text = text
+        self.text = text.strip()
         self.user_id = user_id
         self.place_id = place_id
+
+    def update(self, data):
+        """
+        Update review attributes safely.
+        """
+
+        update_data = data.copy()
+
+        if "text" in update_data:
+            update_data["text"] = update_data[
+                "text"
+            ].strip()
+
+        # Prevent changing ownership
+        update_data.pop("user_id", None)
+        update_data.pop("place_id", None)
+
+        super().update(update_data)
 
     def to_dict(self):
         """

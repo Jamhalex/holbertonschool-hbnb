@@ -3,7 +3,13 @@
 Review API endpoints.
 """
 
+from flask_jwt_extended import (
+    get_jwt,
+    get_jwt_identity,
+    jwt_required
+)
 from flask_restx import Namespace, Resource, fields
+from sqlalchemy.exc import SQLAlchemyError
 
 from app.services import facade
 
@@ -20,10 +26,6 @@ review_model = api.model(
         "text": fields.String(
             required=True,
             description="Review text"
-        ),
-        "user_id": fields.String(
-            required=True,
-            description="ID of the user creating the review"
         ),
         "place_id": fields.String(
             required=True,
@@ -44,53 +46,174 @@ update_review_model = api.model(
 )
 
 
+def serialize_user(user):
+    """
+    Return public information about a review author.
+    """
+
+    return {
+        "id": user.id,
+        "first_name": user.first_name,
+        "last_name": user.last_name,
+        "email": user.email
+    }
+
+
+def serialize_review(review, include_user=False):
+    """
+    Return a dictionary representation of a review.
+
+    Args:
+        review (Review): Review to serialize.
+        include_user (bool): Include public author information.
+
+    Returns:
+        dict: Serialized review data.
+    """
+
+    review_data = review.to_dict()
+
+    if include_user and review.user:
+        review_data["user"] = serialize_user(
+            review.user
+        )
+
+    return review_data
+
+
+def validate_review_data(review_data, require_place=True):
+    """
+    Validate review creation or update data.
+
+    Args:
+        review_data (dict): Review data to validate.
+        require_place (bool): Whether place_id is required.
+
+    Returns:
+        tuple: Validation result and optional error message.
+    """
+
+    if not review_data:
+        return False, "No review data provided"
+
+    if require_place:
+        allowed_fields = {
+            "text",
+            "place_id"
+        }
+        required_fields = {
+            "text",
+            "place_id"
+        }
+    else:
+        allowed_fields = {
+            "text"
+        }
+        required_fields = {
+            "text"
+        }
+
+    if not set(review_data).issubset(allowed_fields):
+        return False, "Invalid review field"
+
+    if not required_fields.issubset(review_data):
+        return False, "Missing required review data"
+
+    text = review_data.get("text")
+
+    if not isinstance(text, str) or not text.strip():
+        return False, "Review text is required"
+
+    if require_place:
+        place_id = review_data.get("place_id")
+
+        if not isinstance(place_id, str) or not place_id.strip():
+            return False, "Place ID is required"
+
+    return True, None
+
+
+def can_modify_review(review):
+    """
+    Determine whether the authenticated user may modify a review.
+    """
+
+    current_user_id = get_jwt_identity()
+    claims = get_jwt()
+    is_admin = claims.get("is_admin", False)
+
+    return is_admin or review.user_id == current_user_id
+
+
 @api.route("/")
 class ReviewList(Resource):
     """
     Handle review collection operations.
     """
 
+    @jwt_required()
     @api.expect(review_model, validate=True)
-    @api.response(201, "Review created successfully")
+    @api.response(201, "Review successfully created")
     @api.response(400, "Invalid input data")
+    @api.response(401, "Authentication required")
+    @api.response(404, "Place not found")
     def post(self):
         """
-        Create a new review.
+        Create a review as the authenticated user.
         """
 
-        data = api.payload
+        review_data = api.payload.copy()
 
-        text = data.get("text")
-        user_id = data.get("user_id")
-        place_id = data.get("place_id")
+        valid, error = validate_review_data(
+            review_data,
+            require_place=True
+        )
 
-        if not isinstance(text, str) or not text.strip():
+        if not valid:
             return {
-                "error": "Review text is required"
+                "error": error
             }, 400
 
-        if not facade.get_user(user_id):
-            return {
-                "error": "User not found"
-            }, 400
+        review_data["text"] = review_data[
+            "text"
+        ].strip()
 
-        if not facade.get_place(place_id):
+        review_data["place_id"] = review_data[
+            "place_id"
+        ].strip()
+
+        place = facade.get_place(
+            review_data["place_id"]
+        )
+
+        if not place:
             return {
                 "error": "Place not found"
-            }, 400
+            }, 404
 
-        review = facade.create_review({
-            "text": text.strip(),
-            "user_id": user_id,
-            "place_id": place_id
-        })
+        review_data["user_id"] = get_jwt_identity()
 
-        if not review:
+        try:
+            review = facade.create_review(
+                review_data
+            )
+        except SQLAlchemyError:
             return {
                 "error": "Unable to create review"
             }, 400
 
-        return review.to_dict(), 201
+        if not review:
+            return {
+                "error": (
+                    "A review from this user already exists "
+                    "for this place"
+                )
+            }, 400
+
+        return serialize_review(
+            review,
+            include_user=True
+        ), 201
 
     @api.response(200, "Reviews retrieved successfully")
     def get(self):
@@ -101,7 +224,10 @@ class ReviewList(Resource):
         reviews = facade.get_all_reviews()
 
         return [
-            review.to_dict()
+            serialize_review(
+                review,
+                include_user=True
+            )
             for review in reviews
         ], 200
 
@@ -126,53 +252,132 @@ class ReviewResource(Resource):
                 "error": "Review not found"
             }, 404
 
-        return review.to_dict(), 200
+        return serialize_review(
+            review,
+            include_user=True
+        ), 200
 
+    @jwt_required()
     @api.expect(update_review_model, validate=True)
-    @api.response(200, "Review updated successfully")
+    @api.response(200, "Review successfully updated")
     @api.response(400, "Invalid input data")
+    @api.response(401, "Authentication required")
+    @api.response(403, "Unauthorized action")
     @api.response(404, "Review not found")
     def put(self, review_id):
         """
         Update a review.
+
+        Review authors may update their own reviews. Administrators may
+        update any review.
         """
 
-        data = api.payload
-        text = data.get("text")
-
-        if not isinstance(text, str) or not text.strip():
-            return {
-                "error": "Review text is required"
-            }, 400
-
-        review = facade.update_review(
-            review_id,
-            {
-                "text": text.strip()
-            }
-        )
+        review = facade.get_review(review_id)
 
         if not review:
             return {
                 "error": "Review not found"
             }, 404
 
-        return review.to_dict(), 200
+        if not can_modify_review(review):
+            return {
+                "error": "Unauthorized action"
+            }, 403
 
-    @api.response(200, "Review deleted successfully")
+        review_data = api.payload.copy()
+
+        valid, error = validate_review_data(
+            review_data,
+            require_place=False
+        )
+
+        if not valid:
+            return {
+                "error": error
+            }, 400
+
+        review_data["text"] = review_data[
+            "text"
+        ].strip()
+
+        try:
+            updated_review = facade.update_review(
+                review_id,
+                review_data
+            )
+        except SQLAlchemyError:
+            return {
+                "error": "Unable to update review"
+            }, 400
+
+        return serialize_review(
+            updated_review,
+            include_user=True
+        ), 200
+
+    @jwt_required()
+    @api.response(200, "Review successfully deleted")
+    @api.response(401, "Authentication required")
+    @api.response(403, "Unauthorized action")
     @api.response(404, "Review not found")
     def delete(self, review_id):
         """
         Delete a review.
+
+        Review authors may delete their own reviews. Administrators may
+        delete any review.
         """
 
-        deleted = facade.delete_review(review_id)
+        review = facade.get_review(review_id)
 
-        if not deleted:
+        if not review:
             return {
                 "error": "Review not found"
             }, 404
 
+        if not can_modify_review(review):
+            return {
+                "error": "Unauthorized action"
+            }, 403
+
+        try:
+            facade.delete_review(review_id)
+        except SQLAlchemyError:
+            return {
+                "error": "Unable to delete review"
+            }, 400
+
         return {
             "message": "Review deleted successfully"
         }, 200
+
+
+@api.route("/places/<place_id>")
+class PlaceReviewList(Resource):
+    """
+    Handle reviews associated with a specific place.
+    """
+
+    @api.response(200, "Place reviews retrieved successfully")
+    @api.response(404, "Place not found")
+    def get(self, place_id):
+        """
+        Retrieve all reviews for a place.
+        """
+
+        reviews = facade.get_reviews_by_place(
+            place_id
+        )
+
+        if reviews is None:
+            return {
+                "error": "Place not found"
+            }, 404
+
+        return [
+            serialize_review(
+                review,
+                include_user=True
+            )
+            for review in reviews
+        ], 200

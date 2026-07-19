@@ -9,12 +9,12 @@ Application Factory pattern.
 from flask import Flask
 from flask_restx import Api
 
-from app.extensions import bcrypt, db, jwt
 from app.api.v1.amenities import api as amenities_ns
 from app.api.v1.auth import api as auth_ns
 from app.api.v1.places import api as places_ns
 from app.api.v1.reviews import api as reviews_ns
 from app.api.v1.users import api as users_ns
+from app.extensions import bcrypt, cors, db, jwt
 
 
 def create_app(config_class="config.DevelopmentConfig"):
@@ -38,6 +38,18 @@ def create_app(config_class="config.DevelopmentConfig"):
     jwt.init_app(app)
     db.init_app(app)
 
+    cors.init_app(
+        app,
+        resources={
+            r"/api/*": {
+                "origins": [
+                    "http://localhost:8000",
+                    "http://127.0.0.1:8000"
+                ]
+            }
+        }
+    )
+
     # Initialize REST API
     api = Api(
         app,
@@ -53,5 +65,7 @@ def create_app(config_class="config.DevelopmentConfig"):
     api.add_namespace(places_ns, path="/api/v1/places")
     api.add_namespace(reviews_ns, path="/api/v1/reviews")
     api.add_namespace(auth_ns, path="/api/v1/auth")
+    with app.app_context():
+        db.create_all()
 
     return app

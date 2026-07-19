@@ -17,21 +17,41 @@ class Amenity(BaseModel):
 
     name = db.Column(
         db.String(50),
-        nullable=False
+        nullable=False,
+        unique=True,
+        index=True
     )
 
     places = db.relationship(
         "Place",
         secondary=place_amenity,
-        back_populates="amenities"
+        back_populates="amenities",
+        lazy=True
     )
 
     def __init__(self, name):
         """
         Initialize an Amenity instance.
+
+        Args:
+            name (str): Amenity name.
         """
 
-        self.name = name
+        self.name = name.strip()
+
+    def update(self, data):
+        """
+        Update amenity attributes safely.
+        """
+
+        update_data = data.copy()
+
+        if "name" in update_data:
+            update_data["name"] = update_data[
+                "name"
+            ].strip()
+
+        super().update(update_data)
 
     def to_dict(self):
         """

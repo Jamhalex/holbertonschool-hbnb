@@ -5,12 +5,14 @@ Repository interfaces and persistence implementations.
 
 from abc import ABC, abstractmethod
 
+from sqlalchemy.exc import SQLAlchemyError
+
 from app.extensions import db
 
 
 class Repository(ABC):
     """
-    Abstract repository interface.
+    Define the common repository interface.
     """
 
     @abstractmethod
@@ -34,30 +36,30 @@ class Repository(ABC):
     @abstractmethod
     def update(self, obj_id, data):
         """
-        Update an object.
+        Update an object using the supplied data.
         """
 
     @abstractmethod
     def delete(self, obj_id):
         """
-        Delete an object.
+        Delete an object by ID.
         """
 
     @abstractmethod
     def get_by_attribute(self, attr_name, attr_value):
         """
-        Retrieve an object by an attribute.
+        Retrieve an object by an attribute value.
         """
 
 
 class InMemoryRepository(Repository):
     """
-    Repository that stores objects in memory.
+    Store and manage objects in memory.
     """
 
     def __init__(self):
         """
-        Initialize the in-memory storage.
+        Initialize empty in-memory storage.
         """
 
         self._storage = {}
@@ -144,12 +146,19 @@ class SQLAlchemyRepository(Repository):
     def add(self, obj):
         """
         Add and persist an object.
+
+        Raises:
+            SQLAlchemyError: If the database operation fails.
         """
 
-        db.session.add(obj)
-        db.session.commit()
+        try:
+            db.session.add(obj)
+            db.session.commit()
 
-        return obj
+            return obj
+        except SQLAlchemyError:
+            db.session.rollback()
+            raise
 
     def get(self, obj_id):
         """
@@ -171,12 +180,15 @@ class SQLAlchemyRepository(Repository):
         return list(
             db.session.execute(
                 statement
-            ).scalars()
+            ).scalars().all()
         )
 
     def update(self, obj_id, data):
         """
         Update and persist an existing object.
+
+        Raises:
+            SQLAlchemyError: If the database operation fails.
         """
 
         obj = self.get(obj_id)
@@ -184,17 +196,21 @@ class SQLAlchemyRepository(Repository):
         if not obj:
             return None
 
-        for key, value in data.items():
-            if hasattr(obj, key):
-                setattr(obj, key, value)
+        try:
+            obj.update(data)
+            db.session.commit()
 
-        db.session.commit()
-
-        return obj
+            return obj
+        except SQLAlchemyError:
+            db.session.rollback()
+            raise
 
     def delete(self, obj_id):
         """
         Delete an object from the database.
+
+        Raises:
+            SQLAlchemyError: If the database operation fails.
         """
 
         obj = self.get(obj_id)
@@ -202,10 +218,14 @@ class SQLAlchemyRepository(Repository):
         if not obj:
             return False
 
-        db.session.delete(obj)
-        db.session.commit()
+        try:
+            db.session.delete(obj)
+            db.session.commit()
 
-        return True
+            return True
+        except SQLAlchemyError:
+            db.session.rollback()
+            raise
 
     def get_by_attribute(self, attr_name, attr_value):
         """

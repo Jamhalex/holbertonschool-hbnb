@@ -3,8 +3,13 @@
 User API endpoints.
 """
 
-from flask_jwt_extended import get_jwt, get_jwt_identity, jwt_required
+from flask_jwt_extended import (
+    get_jwt,
+    get_jwt_identity,
+    jwt_required
+)
 from flask_restx import Namespace, Resource, fields
+from sqlalchemy.exc import SQLAlchemyError
 
 from app.services import facade
 
@@ -28,7 +33,7 @@ user_model = api.model(
         ),
         "email": fields.String(
             required=True,
-            description="Email of the user"
+            description="Email address of the user"
         ),
         "password": fields.String(
             required=True,
@@ -66,22 +71,57 @@ update_user_model = api.model(
 
 def serialize_user(user):
     """
-    Return public user data without exposing the password.
+    Return user data without exposing the password.
     """
 
-    return {
-        "id": user.id,
-        "first_name": user.first_name,
-        "last_name": user.last_name,
-        "email": user.email,
-        "is_admin": user.is_admin
-    }
+    return user.to_dict()
+
+
+def is_valid_email(email):
+    """
+    Perform basic email validation.
+    """
+
+    if not isinstance(email, str):
+        return False
+
+    email = email.strip()
+
+    return (
+        "@" in email
+        and not email.startswith("@")
+        and not email.endswith("@")
+    )
 
 
 def validate_registration_data(user_data):
     """
-    Validate user creation input.
+    Validate administrator user-creation data.
     """
+
+    if not user_data:
+        return False, "No user data provided"
+
+    allowed_fields = {
+        "first_name",
+        "last_name",
+        "email",
+        "password",
+        "is_admin"
+    }
+
+    required_fields = {
+        "first_name",
+        "last_name",
+        "email",
+        "password"
+    }
+
+    if not set(user_data).issubset(allowed_fields):
+        return False, "Invalid user field"
+
+    if not required_fields.issubset(user_data):
+        return False, "Missing required user data"
 
     first_name = user_data.get("first_name")
     last_name = user_data.get("last_name")
@@ -94,10 +134,7 @@ def validate_registration_data(user_data):
     if not isinstance(last_name, str) or not last_name.strip():
         return False, "Last name is required"
 
-    if not isinstance(email, str) or not email.strip():
-        return False, "Email is required"
-
-    if "@" not in email:
+    if not is_valid_email(email):
         return False, "Invalid email format"
 
     if not isinstance(password, str) or not password.strip():
@@ -178,12 +215,7 @@ def validate_admin_update(user_data):
             return False, "Last name cannot be empty"
 
     if "email" in user_data:
-        email = user_data["email"]
-
-        if not isinstance(email, str) or not email.strip():
-            return False, "Email cannot be empty"
-
-        if "@" not in email:
+        if not is_valid_email(user_data["email"]):
             return False, "Invalid email format"
 
     if "password" in user_data:
@@ -199,6 +231,31 @@ def validate_admin_update(user_data):
         return False, "is_admin must be a boolean"
 
     return True, None
+
+
+def clean_user_data(user_data):
+    """
+    Normalize user input before persistence.
+    """
+
+    cleaned_data = user_data.copy()
+
+    if "first_name" in cleaned_data:
+        cleaned_data["first_name"] = cleaned_data[
+            "first_name"
+        ].strip()
+
+    if "last_name" in cleaned_data:
+        cleaned_data["last_name"] = cleaned_data[
+            "last_name"
+        ].strip()
+
+    if "email" in cleaned_data:
+        cleaned_data["email"] = cleaned_data[
+            "email"
+        ].strip().lower()
+
+    return cleaned_data
 
 
 @api.route("/")
@@ -227,27 +284,32 @@ class UserList(Resource):
 
         user_data = api.payload.copy()
 
-        valid, error = validate_registration_data(user_data)
+        valid, error = validate_registration_data(
+            user_data
+        )
 
         if not valid:
             return {
                 "error": error
             }, 400
 
-        email = user_data["email"].strip()
+        user_data = clean_user_data(user_data)
 
-        existing_user = facade.get_user_by_email(email)
+        existing_user = facade.get_user_by_email(
+            user_data["email"]
+        )
 
         if existing_user:
             return {
                 "error": "Email already registered"
             }, 400
 
-        user_data["first_name"] = user_data["first_name"].strip()
-        user_data["last_name"] = user_data["last_name"].strip()
-        user_data["email"] = email
-
-        new_user = facade.create_user(user_data)
+        try:
+            new_user = facade.create_user(user_data)
+        except (ValueError, SQLAlchemyError) as error:
+            return {
+                "error": str(error)
+            }, 400
 
         return serialize_user(new_user), 201
 
@@ -271,7 +333,7 @@ class UserResource(Resource):
     Handle individual user operations.
     """
 
-    @api.response(200, "User details retrieved successfully")
+    @api.response(200, "User retrieved successfully")
     @api.response(404, "User not found")
     def get(self, user_id):
         """
@@ -289,7 +351,7 @@ class UserResource(Resource):
 
     @jwt_required()
     @api.expect(update_user_model, validate=True)
-    @api.response(200, "User updated successfully")
+    @api.response(200, "User successfully updated")
     @api.response(400, "Invalid input data")
     @api.response(401, "Authentication required")
     @api.response(403, "Unauthorized action")
@@ -304,9 +366,9 @@ class UserResource(Resource):
 
         current_user_id = get_jwt_identity()
         claims = get_jwt()
-        admin = claims.get("is_admin", False)
+        is_admin = claims.get("is_admin", False)
 
-        if not admin and current_user_id != user_id:
+        if not is_admin and current_user_id != user_id:
             return {
                 "error": "Unauthorized action"
             }, 403
@@ -320,7 +382,7 @@ class UserResource(Resource):
 
         user_data = api.payload.copy()
 
-        if admin:
+        if is_admin:
             valid, error = validate_admin_update(user_data)
         else:
             valid, error = validate_regular_update(user_data)
@@ -330,36 +392,26 @@ class UserResource(Resource):
                 "error": error
             }, 400
 
-        if "email" in user_data:
-            new_email = user_data["email"].strip()
+        user_data = clean_user_data(user_data)
 
-            existing_user = facade.get_user_by_email(new_email)
+        if "email" in user_data:
+            existing_user = facade.get_user_by_email(
+                user_data["email"]
+            )
 
             if existing_user and existing_user.id != user_id:
                 return {
                     "error": "Email already registered"
                 }, 400
 
-            user_data["email"] = new_email
-
-        if "first_name" in user_data:
-            user_data["first_name"] = user_data[
-                "first_name"
-            ].strip()
-
-        if "last_name" in user_data:
-            user_data["last_name"] = user_data[
-                "last_name"
-            ].strip()
-
-        new_password = user_data.pop("password", None)
-
-        updated_user = facade.update_user(
-            user_id,
-            user_data
-        )
-
-        if new_password:
-            updated_user.hash_password(new_password)
+        try:
+            updated_user = facade.update_user(
+                user_id,
+                user_data
+            )
+        except (ValueError, SQLAlchemyError) as error:
+            return {
+                "error": str(error)
+            }, 400
 
         return serialize_user(updated_user), 200

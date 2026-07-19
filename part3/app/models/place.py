@@ -43,24 +43,28 @@ class Place(BaseModel):
     owner_id = db.Column(
         db.String(36),
         db.ForeignKey("users.id"),
-        nullable=False
+        nullable=False,
+        index=True
     )
 
     owner = db.relationship(
         "User",
-        back_populates="places"
+        back_populates="places",
+        lazy=True
     )
 
     reviews = db.relationship(
         "Review",
         back_populates="place",
-        cascade="all, delete-orphan"
+        cascade="all, delete-orphan",
+        lazy=True
     )
 
     amenities = db.relationship(
         "Amenity",
         secondary=place_amenity,
-        back_populates="places"
+        back_populates="places",
+        lazy=True
     )
 
     def __init__(
@@ -76,8 +80,12 @@ class Place(BaseModel):
         Initialize a Place instance.
         """
 
-        self.title = title
-        self.description = description
+        self.title = title.strip()
+        self.description = (
+            description.strip()
+            if description
+            else ""
+        )
         self.price = price
         self.latitude = latitude
         self.longitude = longitude
@@ -85,11 +93,43 @@ class Place(BaseModel):
 
     def add_amenity(self, amenity):
         """
-        Associate an amenity with the place.
+        Associate an amenity with this place.
         """
 
         if amenity not in self.amenities:
             self.amenities.append(amenity)
+
+    def remove_amenity(self, amenity):
+        """
+        Remove an amenity from this place.
+        """
+
+        if amenity in self.amenities:
+            self.amenities.remove(amenity)
+
+    def update(self, data):
+        """
+        Update place attributes safely.
+        """
+
+        update_data = data.copy()
+
+        if "title" in update_data:
+            update_data["title"] = update_data[
+                "title"
+            ].strip()
+
+        if (
+            "description" in update_data
+            and update_data["description"] is not None
+        ):
+            update_data["description"] = update_data[
+                "description"
+            ].strip()
+
+        update_data.pop("owner_id", None)
+
+        super().update(update_data)
 
     def to_dict(self):
         """
@@ -104,7 +144,11 @@ class Place(BaseModel):
             "price": self.price,
             "latitude": self.latitude,
             "longitude": self.longitude,
-            "owner_id": self.owner_id
+            "owner_id": self.owner_id,
+            "amenities": [
+                amenity.id
+                for amenity in self.amenities
+            ]
         })
 
         return data

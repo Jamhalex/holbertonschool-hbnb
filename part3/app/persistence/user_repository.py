@@ -22,9 +22,20 @@ class UserRepository(SQLAlchemyRepository):
     def get_user_by_email(self, email):
         """
         Retrieve a user by email address.
+
+        Args:
+            email (str): Email address to search for.
+
+        Returns:
+            User: Matching user, or None.
         """
+
+        if not isinstance(email, str) or not email.strip():
+            return None
+
+        normalized_email = email.strip().lower()
 
         return self.get_by_attribute(
             "email",
-            email
+            normalized_email
         )

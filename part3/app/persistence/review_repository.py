@@ -23,12 +23,22 @@ class ReviewRepository(SQLAlchemyRepository):
     def get_reviews_by_place(self, place_id):
         """
         Retrieve all reviews associated with a place.
+
+        Args:
+            place_id (str): ID of the place.
+
+        Returns:
+            list: Reviews belonging to the specified place.
         """
 
-        statement = db.select(Review).filter_by(
+        statement = db.select(
+            Review
+        ).filter_by(
             place_id=place_id
         )
 
         return list(
-            db.session.execute(statement).scalars()
+            db.session.execute(
+                statement
+            ).scalars().all()
         )

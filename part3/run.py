@@ -3,6 +3,8 @@
 Run the HBnB Flask application.
 """
 
+import os
+
 from app import create_app
 from app.extensions import db
 from app.services import facade
@@ -13,27 +15,41 @@ app = create_app()
 
 def create_default_admin():
     """
-    Create a development administrator if one does not already exist.
+    Create a development administrator when one does not exist.
+
+    Administrator credentials can be configured with environment
+    variables.
     """
 
-    admin_email = "admin@test.com"
+    admin_email = os.getenv(
+        "HBNB_ADMIN_EMAIL",
+        "admin@test.com"
+    ).strip().lower()
 
-    existing_admin = facade.get_user_by_email(admin_email)
+    admin_password = os.getenv(
+        "HBNB_ADMIN_PASSWORD",
+        "admin123"
+    )
+
+    existing_admin = facade.get_user_by_email(
+        admin_email
+    )
 
     if existing_admin:
-        return
+        return existing_admin
 
-    facade.create_user({
+    admin = facade.create_user({
         "first_name": "Admin",
         "last_name": "User",
         "email": admin_email,
-        "password": "admin123",
+        "password": admin_password,
         "is_admin": True
     })
 
     print("Development administrator created:")
-    print("Email: admin@test.com")
-    print("Password: admin123")
+    print(f"Email: {admin_email}")
+
+    return admin
 
 
 if __name__ == "__main__":
@@ -42,6 +58,8 @@ if __name__ == "__main__":
         create_default_admin()
 
     app.run(
-        debug=True,
+        host="0.0.0.0",
+        port=5000,
+        debug=app.config.get("DEBUG", False),
         use_reloader=False
     )

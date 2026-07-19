@@ -14,7 +14,7 @@ class AmenityRepository(SQLAlchemyRepository):
 
     def __init__(self):
         """
-        Initialize the repository with the Amenity model.
+        Initialize the repository using the Amenity model.
         """
 
         super().__init__(Amenity)
